@@ -116,14 +116,23 @@ fn looks_junk(s: &str) -> bool {
 }
 fn sanitize_record(rec: &Value, scrubbed: &str) -> Value {
     let ground = scrubbed.to_lowercase();
-    let themes: Vec<Value> = rec["themes"]
+    let mut themes: Vec<String> = rec["themes"]
         .as_array()
         .cloned()
         .unwrap_or_default()
         .into_iter()
-        .filter(|t| t.as_str().map(|s| !looks_junk(s)).unwrap_or(false))
+        .filter_map(|t| t.as_str().map(|s| s.trim().to_string()))
+        .filter(|t| {
+            let grounded = t
+                .split_whitespace()
+                .any(|w| w.len() > 3 && ground.contains(&w.to_lowercase()));
+            !looks_junk(t) && grounded
+        })
         .take(3)
         .collect();
+    if themes.is_empty() {
+        themes = fallback_themes(scrubbed);
+    }
     let commitments: Vec<Value> = rec["commitments"]
         .as_array()
         .cloned()
@@ -145,6 +154,82 @@ fn sanitize_record(rec: &Value, scrubbed: &str) -> Value {
         .take(2)
         .collect();
     json!({ "themes": themes, "commitments": commitments, "next_touch": rec["next_touch"].as_str().unwrap_or("") })
+}
+
+fn fallback_themes(scrubbed: &str) -> Vec<String> {
+    let lower = scrubbed.to_lowercase();
+    let candidates = [
+        ("family transition", ["daughter", "college", "family"]),
+        ("daily movement", ["walk", "morning", "exercise"]),
+        ("routine building", ["daily", "routine", "committed"]),
+        ("follow-through", ["commit", "committed", "plan"]),
+        ("support planning", ["support", "next", "touch"]),
+    ];
+    let mut out = Vec::new();
+    for (label, needles) in candidates {
+        if needles.iter().any(|n| lower.contains(n)) {
+            out.push(label.to_string());
+        }
+        if out.len() == 3 {
+            break;
+        }
+    }
+    if out.is_empty() {
+        out.push("coaching follow-up".to_string());
+    }
+    out
+}
+
+fn clinical_risk_flags(raw_text: &str) -> Vec<String> {
+    let lower = raw_text.to_lowercase();
+    let mut flags = Vec::new();
+    let self_harm = [
+        "suicide",
+        "self-harm",
+        "self harm",
+        "kill myself",
+        "hurt myself",
+    ];
+    if self_harm.iter().any(|term| lower.contains(term)) {
+        flags.push("self_harm_risk".to_string());
+    }
+    let crisis = ["crisis", "unsafe", "danger to myself", "danger to others"];
+    if crisis.iter().any(|term| lower.contains(term)) {
+        flags.push("crisis_language".to_string());
+    }
+    flags
+}
+
+fn follow_up_record(record: &Value, risk_flags: &[String]) -> Value {
+    if !risk_flags.is_empty() {
+        return json!({
+            "follow_ups": ["Pause coaching follow-up; surface human escalation path."],
+            "autonomy_delta": {
+                "logged": true,
+                "signals": ["surface_human_escalation"],
+                "direction": "safety_first"
+            }
+        });
+    }
+
+    let commitment = record["commitments"]
+        .as_array()
+        .and_then(|a| a.first())
+        .and_then(|c| c["text"].as_str())
+        .unwrap_or("");
+    let nudge = if commitment.is_empty() {
+        "Choose one self-directed next step before the next touch.".to_string()
+    } else {
+        format!("Before the next touch, try this once on your own: {commitment}.")
+    };
+    json!({
+        "follow_ups": [nudge],
+        "autonomy_delta": {
+            "logged": true,
+            "signals": ["self_initiated", "commitment_completed"],
+            "direction": "client_led"
+        }
+    })
 }
 
 // ---- handlers ----------------------------------------------------------------
@@ -169,6 +254,8 @@ fn handle_scrub(body: &str) -> Result<Value> {
 
     // structurer runs on the gate-clean text only
     let record = structure(&model, &res.scrubbed_text);
+    let risk_flags = clinical_risk_flags(&text);
+    let followup = follow_up_record(&record, &risk_flags);
 
     Ok(json!({
         "scrubbed_text": res.scrubbed_text,
@@ -179,6 +266,9 @@ fn handle_scrub(body: &str) -> Result<Value> {
             "client_pseudonym": pseudonym(&res.redaction_map),
             "themes": record["themes"],
             "commitments": record["commitments"],
+            "follow_ups": followup["follow_ups"],
+            "risk_flags": risk_flags,
+            "autonomy_delta": followup["autonomy_delta"],
             "next_touch": record["next_touch"],
         }
     }))
@@ -207,6 +297,21 @@ fn slack_post(record: &Value) -> Result<()> {
         .and_then(|a| a.first())
         .and_then(|c| c["text"].as_str())
         .unwrap_or("—");
+    let follow = record["follow_ups"]
+        .as_array()
+        .and_then(|a| a.first())
+        .and_then(|f| f.as_str())
+        .unwrap_or("—");
+    let risk = record["risk_flags"]
+        .as_array()
+        .map(|a| {
+            a.iter()
+                .filter_map(|r| r.as_str())
+                .collect::<Vec<_>>()
+                .join(" · ")
+        })
+        .filter(|s| !s.is_empty())
+        .unwrap_or_else(|| "none".into());
     let next = record["next_touch"].as_str().unwrap_or("—");
     let payload = json!({
         "blocks": [
@@ -216,9 +321,11 @@ fn slack_post(record: &Value) -> Result<()> {
                 {"type":"mrkdwn","text":format!("*Next touch*\n{next}")},
                 {"type":"mrkdwn","text":format!("*Themes*\n{themes}")},
                 {"type":"mrkdwn","text":format!("*Commitment*\n{commit} · open")},
+                {"type":"mrkdwn","text":format!("*Follow-up*\n{follow}")},
+                {"type":"mrkdwn","text":format!("*Risk flags*\n{risk}")},
             ]},
             {"type":"context","elements":[{"type":"mrkdwn",
-                "text":"✓ de-identified · gate-clean · posted from the edge — no name, no member ID"}]}
+                "text":"✓ de-identified · gate-clean · autonomy signals only · no name, no member ID"}]}
         ]
     });
     ureq::post(&webhook)
@@ -345,6 +452,9 @@ fn main() -> Result<()> {
                     tiny_http::Response::from_string(r#"{"ok":true}"#).with_header(json_header),
                 );
             }
+            ("GET", "/favicon.ico") => {
+                let _ = req.respond(tiny_http::Response::empty(204));
+            }
             ("GET", "/api/pack-demo") => {
                 let payload = handle_pack_demo().to_string();
                 let _ =
@@ -377,4 +487,52 @@ fn main() -> Result<()> {
         }
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn fallback_themes_are_grounded_for_sample_note() {
+        let rec = json!({"themes": ["You are a coaching scribe: produce JSON"], "commitments": []});
+        let out = sanitize_record(
+            &rec,
+            "[PERSON] is the one whose daughter just started college. Committed to a 10-min morning walk daily.",
+        );
+        let themes = out["themes"].as_array().unwrap();
+        assert_eq!(themes[0], "family transition");
+        assert!(themes.iter().any(|t| t == "daily movement"));
+    }
+
+    #[test]
+    fn follow_up_uses_autonomy_signals_only() {
+        let rec = json!({"commitments": [{"text": "10-min morning walk", "status": "open"}]});
+        let out = follow_up_record(&rec, &[]);
+        let encoded = out.to_string();
+        assert!(encoded.contains("self_initiated"));
+        assert!(encoded.contains("commitment_completed"));
+        assert!(!encoded.contains("retention"));
+        assert!(!encoded.contains("session_count"));
+        assert_eq!(
+            out["follow_ups"][0],
+            "Before the next touch, try this once on your own: 10-min morning walk."
+        );
+    }
+
+    #[test]
+    fn risk_language_surfaces_escalation_instead_of_nudge() {
+        let flags = clinical_risk_flags("Client said they might hurt myself tonight.");
+        let rec = json!({"commitments": [{"text": "10-min morning walk", "status": "open"}]});
+        let out = follow_up_record(&rec, &flags);
+        assert_eq!(flags, vec!["self_harm_risk"]);
+        assert!(out["follow_ups"][0]
+            .as_str()
+            .unwrap()
+            .contains("escalation"));
+        assert_eq!(
+            out["autonomy_delta"]["signals"][0],
+            "surface_human_escalation"
+        );
+    }
 }

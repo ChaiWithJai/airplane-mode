@@ -26,6 +26,7 @@
   @keyframes glow{0%,100%{box-shadow:0 0 0 0 rgba(54,194,129,0)}50%{box-shadow:0 0 30px 1px rgba(54,194,129,.4)}}
   @keyframes spin{to{transform:rotate(360deg)}}
   @keyframes pop{0%{opacity:0;transform:translateY(6px) scale(.96)}100%{opacity:1;transform:none}}
+  @keyframes pulse{0%,100%{transform:scale(1);box-shadow:0 18px 34px -20px rgba(184,120,20,.6)}50%{transform:scale(1.025);box-shadow:0 22px 44px -18px rgba(184,120,20,.8)}}
 
   /* device: FULL-BLEED on real phones (the phone is the frame); a device frame only
      on desktop pointers. */
@@ -59,9 +60,15 @@
   .sw.on{background:var(--gold)} .sw.on b{right:3px} .sw.off{background:#2f6f4c} .sw.off b{left:3px}
   .note{background:var(--card);border:1.5px solid #ece4d4;border-radius:16px;padding:16px;
     font:400 14.5px/1.65 var(--sans);color:#3a352c;flex:1;min-height:0;overflow:auto;width:100%;resize:none;outline:none}
+  .note:focus{border-color:#c6912f;box-shadow:0 0 0 3px rgba(198,145,47,.16)}
   .chip{font:600 11px var(--sans);color:#3a352c;background:#efe9da;border-radius:8px;padding:5px 9px;display:inline-block}
   .pill{font:600 9px/1 var(--mono);border-radius:20px;padding:4px 8px;display:inline-flex;align-items:center;gap:4px}
   .code{font:500 10.5px/1.55 var(--mono);white-space:pre-wrap;word-break:break-word;color:#4f493f;background:#f7f1e5;border:1px solid var(--line);border-radius:10px;padding:10px}
+  .micbtn{display:flex;align-items:center;justify-content:center;gap:11px;width:100%;border:0;border-radius:18px;
+    padding:17px 18px;background:linear-gradient(180deg,#c6912f,#a86610);color:#fff;cursor:pointer;
+    font:800 16px var(--sans);box-shadow:0 18px 34px -20px rgba(184,120,20,.72)}
+  .micbtn.listening{animation:pulse 1.25s ease-in-out infinite;background:linear-gradient(180deg,#1f7a4d,#155f3a)}
+  .micorb{width:33px;height:33px;border-radius:50%;background:rgba(255,255,255,.18);display:inline-flex;align-items:center;justify-content:center;font-size:17px}
   .mono{font-family:var(--mono)}
   .grow{flex:1;min-height:0}
   .center{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
@@ -87,7 +94,8 @@
 
 <script>
 const NOTE = "Met with Maria Alvarez (CM-204815) at her place Tuesday. She's the one whose daughter just started college. Committed to a 10-min morning walk daily.";
-const S = { airplane:true, screen:'capturing', note:'', result:null, error:null, posted:false, sendNote:'', packDemo:null, packError:null };
+const S = { airplane:true, screen:'capturing', note:'', result:null, error:null, posted:false, sendNote:'', packDemo:null, packError:null, listening:false, speechMsg:'' };
+let recognizer = null;
 
 const $phone = document.getElementById('phone');
 const $screen = document.getElementById('screen');
@@ -118,11 +126,19 @@ const screens = {
      <div style="width:26px;height:26px;border-radius:8px;background:var(--ink);display:flex;align-items:center;justify-content:center;color:var(--gold2);font-size:13px">✈</div>
      <div style="font:700 15px var(--sans);letter-spacing:-.01em">New session</div>
      <span class="pill" style="margin-left:auto;color:var(--amber);background:#f6ecd6;border:1px solid #e3c98a">✈ offline</span></div>
-   <div class="sub" style="margin-top:11px;font-size:13px">Speak or type the session note. Dictation runs <b style="color:var(--ink)">on your device</b> — tap the field, then the&nbsp;🎤&nbsp;on your keyboard.</div>
-   <textarea class="note" style="margin-top:12px" placeholder="Tap here, then dictate or type the session…" oninput="S.note=this.value">${esc(S.note)}</textarea>
-   <div style="display:flex;align-items:center;justify-content:space-between;margin-top:11px">
-     <span data-act="sample" style="font:600 12px var(--sans);color:var(--gold);cursor:pointer;border-bottom:1px solid #e3c98a">Use a sample note</span>
-     <span class="mono" style="font-size:10px;color:#8a8273">raw text stays on device</span></div>
+   <div style="margin-top:15px;background:linear-gradient(180deg,#fffaf0,#f5edda);border:1.5px solid #eadfca;border-radius:18px;padding:15px 15px 14px">
+     <div class="mono" style="font-size:10px;color:#a39a86;letter-spacing:.08em">CAPTURE</div>
+     <div style="font:800 31px/.95 var(--sans);letter-spacing:-.02em;margin-top:7px">Dictate the session</div>
+     <div class="sub" style="margin-top:8px;font-size:13px">Raw words stay at the edge until the verifier unlocks egress.</div>
+     <button class="micbtn ${S.listening?'listening':''}" data-act="dictate" style="margin-top:13px">
+       <span class="micorb">${S.listening?'■':'🎙'}</span><span>${S.listening?'Listening…':'Start dictation'}</span>
+     </button>
+     <div class="mono" style="height:14px;margin-top:8px;font-size:10px;color:${S.speechMsg?'var(--amber)':'#a39a86'}">${esc(S.speechMsg||'on-device capture · offline first')}</div>
+   </div>
+   <textarea id="noteInput" class="note" style="margin-top:12px" placeholder="Session note appears here…" oninput="S.note=this.value">${esc(S.note)}</textarea>
+   <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px">
+     <button data-act="sample" style="font:700 12px var(--sans);color:var(--gold);background:transparent;border:0;padding:0;cursor:pointer;border-bottom:1px solid #e3c98a">Use sample</button>
+     <span class="mono" style="font-size:10px;color:#8a8273">${S.note.trim()?S.note.trim().split(/\s+/).length:0} words</span></div>
    <div class="grow"></div>
    <button class="btn" data-act="scrub">Scrub on device</button>`; },
 
@@ -186,6 +202,9 @@ const screens = {
    const rec=S.result.record;
    const themes=(rec.themes||[]);
    const coms=(rec.commitments||[]);
+   const follow=(rec.follow_ups||[]);
+   const risks=(rec.risk_flags||[]);
+   const signal=(rec.autonomy_delta&&rec.autonomy_delta.signals||[]).join(' · ');
    const sendLabel = S.airplane ? 'Send to #coach-records' : 'Send to #coach-records';
    return `
    <div style="display:flex;align-items:center;justify-content:space-between">
@@ -202,9 +221,13 @@ const screens = {
      ${coms.map(c=>`<div style="display:flex;align-items:center;justify-content:space-between;margin-top:9px">
         <span style="font:500 13px var(--sans)">${esc(c.text||c)}</span>
         <span class="mono" style="font-size:9px;font-weight:700;color:var(--amber);background:#f6ecd6;border-radius:5px;padding:3px 7px">${esc((c.status||'open').toUpperCase())}</span></div>`).join('')||'<div class="sub" style="margin-top:8px">—</div>'}
+     <div style="height:1px;background:var(--line);margin:14px 0"></div>
+     <div class="mono" style="font-size:10px;color:#a39a86;letter-spacing:.05em">FOLLOW_UP</div>
+     <div style="font:500 13px/1.45 var(--sans);margin-top:8px;color:#3a352c">${esc(follow[0]||'—')}</div>
+     ${signal?`<div class="mono" style="font-size:9px;color:#7a8b73;margin-top:7px">reward: ${esc(signal)}</div>`:''}
      <div style="height:1px;background:var(--line);margin:13px 0"></div>
      <div style="display:flex;gap:18px">
-       <div><div class="mono" style="font-size:10px;color:#a39a86">RISK_FLAGS</div><div style="font:600 13px var(--sans);color:#5b8068;margin-top:6px">none</div></div>
+       <div><div class="mono" style="font-size:10px;color:#a39a86">RISK_FLAGS</div><div style="font:600 13px var(--sans);color:${risks.length?'var(--red)':'#5b8068'};margin-top:6px">${esc(risks.join(' · ')||'none')}</div></div>
        <div><div class="mono" style="font-size:10px;color:#a39a86">NEXT_TOUCH</div><div class="mono" style="font:600 13px var(--mono);margin-top:6px">${esc(rec.next_touch||'—')}</div></div>
      </div>
    </div>
@@ -317,7 +340,8 @@ function render(){
 async function onAct(e){
   const act = e.currentTarget.getAttribute('data-act');
   if(act==='toggle'){ S.airplane=!S.airplane; if(S.screen==='held' && !S.airplane){ go('flush'); return doSend(); } return render(); }
-  if(act==='sample'){ S.note=NOTE; return render(); }
+  if(act==='dictate') return toggleDictation();
+  if(act==='sample'){ S.note=NOTE; S.speechMsg='sample loaded'; return render(); }
   if(act==='scrub'){
     if(!S.note.trim()){ alert('Dictate or type a note first — or tap “Use a sample note”.'); return; }
     go('scrubbing'); return doScrub();
@@ -331,6 +355,47 @@ async function onAct(e){
   if(act==='pack'){ go('pack'); return doPackReveal(); }
   if(act==='packRetry'){ S.packDemo=null; S.packError=null; go('pack'); return doPackReveal(); }
   if(act==='backRecord') return go('delivered');
+}
+
+function noteInput(){
+  return document.getElementById('noteInput');
+}
+
+function focusNote(){
+  const n=noteInput();
+  if(n){ n.focus(); const len=n.value.length; try{ n.setSelectionRange(len,len); }catch(_){} }
+}
+
+function toggleDictation(){
+  if(S.listening && recognizer){ try{ recognizer.stop(); }catch(_){} S.listening=false; S.speechMsg='dictation stopped'; render(); return; }
+  focusNote();
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SpeechRecognition){
+    S.speechMsg='keyboard mic ready';
+    render();
+    setTimeout(focusNote,0);
+    return;
+  }
+  recognizer = new SpeechRecognition();
+  recognizer.continuous = true;
+  recognizer.interimResults = true;
+  recognizer.lang = 'en-US';
+  let base = S.note.trim();
+  recognizer.onstart = ()=>{ S.listening=true; S.speechMsg='capturing voice'; render(); };
+  recognizer.onresult = (event)=>{
+    let finalText='', interim='';
+    for(let i=event.resultIndex;i<event.results.length;i++){
+      const txt=event.results[i][0].transcript.trim();
+      if(event.results[i].isFinal) finalText += (finalText?' ':'') + txt;
+      else interim += (interim?' ':'') + txt;
+    }
+    const pieces=[base, finalText, interim].filter(Boolean);
+    S.note=pieces.join(' ').trim();
+    render();
+  };
+  recognizer.onerror = ()=>{ S.listening=false; S.speechMsg='keyboard mic ready'; render(); setTimeout(focusNote,0); };
+  recognizer.onend = ()=>{ S.listening=false; if(!S.speechMsg) S.speechMsg='dictation captured'; render(); };
+  try{ recognizer.start(); }catch(_){ S.speechMsg='keyboard mic ready'; render(); setTimeout(focusNote,0); }
 }
 
 async function doScrub(){
@@ -371,6 +436,8 @@ function showSlack(){
   const rec=S.result.record;
   const themes=(rec.themes||[]).join(' · ');
   const com=(rec.commitments||[])[0];
+  const follow=(rec.follow_ups||[])[0]||'—';
+  const risks=(rec.risk_flags||[]).join(' · ')||'none';
   $scard.innerHTML = `
    <div style="background:#3a1f3a;padding:13px 16px;display:flex;align-items:center;gap:10px">
      <div style="display:flex;gap:7px"><span style="width:11px;height:11px;border-radius:50%;background:#ff6159"></span><span style="width:11px;height:11px;border-radius:50%;background:#ffbe2f"></span><span style="width:11px;height:11px;border-radius:50%;background:#2bca44"></span></div>
@@ -389,6 +456,8 @@ function showSlack(){
              <span class="mono" style="font-size:11px;color:#a39a86">CLIENT</span><span class="mono" style="font-weight:600">${esc(rec.client_pseudonym)}</span>
              <span class="mono" style="font-size:11px;color:#a39a86">THEMES</span><span style="color:#3a352c">${esc(themes)||'—'}</span>
              <span class="mono" style="font-size:11px;color:#a39a86">COMMITMENT</span><span style="color:#3a352c">${esc(com?com.text:'—')} · <span style="color:var(--amber);font-weight:600">open</span></span>
+             <span class="mono" style="font-size:11px;color:#a39a86">FOLLOW-UP</span><span style="color:#3a352c">${esc(follow)}</span>
+             <span class="mono" style="font-size:11px;color:#a39a86">RISK</span><span style="color:${risks==='none'?'#5b8068':'var(--red)'}">${esc(risks)}</span>
              <span class="mono" style="font-size:11px;color:#a39a86">NEXT TOUCH</span><span class="mono">${esc(rec.next_touch||'—')}</span>
            </div>
            <div class="mono" style="display:flex;align-items:center;gap:8px;margin-top:15px;border-top:1px solid #f0eadd;padding-top:11px;font-size:10px;color:#8aa692">

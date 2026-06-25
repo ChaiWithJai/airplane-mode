@@ -1,21 +1,25 @@
 #!/usr/bin/env bash
 set -euo pipefail
-# run.sh — the one entrypoint, four verbs. Implemented at M1 (backlog/m1.md).
-# Until M1 lands, this is a placeholder that documents the contract.
+# run.sh — the one entrypoint, four verbs. The CLI shell over airplane-core.
+cd "$(dirname "$0")"
 
 verb="${1:-help}"
+
+build() { cargo build -q --bin airplane; }
+BIN="target/debug/airplane"
+
 case "$verb" in
-  eval)   echo "TODO(M1-T11/12): run the scrubber over eval/golden, score recall/precision/leakage, match eval/golden-run.txt" ;;
-  demo)   echo "TODO(M2): full loop on desktop — text in -> clean record -> Slack -> follow-up note" ;;
-  scrub)  echo "TODO(M1-T09): scrub arbitrary text:  ./run.sh scrub \"<text>\"" ;;
-  gates)  echo "TODO(M1-T14): run all harness gates on the current pack (see gates/README.md)" ;;
+  eval)   build; "$BIN" eval ;;
+  scrub)  build; shift; "$BIN" scrub "${1:-}" ;;
+  gates)  build; "$BIN" gates ;;
   help|*) cat <<'EOF'
-Airplane Mode — run.sh
-  ./run.sh eval            reproduce recall/leakage; match eval/golden-run.txt   (the front door)
-  ./run.sh demo            full loop on desktop -> Slack
+Airplane Mode — run.sh   (on-device PHI scrubber; CLI shell over airplane-core)
+  ./run.sh eval            reproduce recall/leakage over the golden set  (the front door)
   ./run.sh scrub "<text>"  scrub arbitrary text
-  ./run.sh gates           run all harness gates
-Not built yet — see backlog/ and AGENTS.md.
+  ./run.sh gates           run the harness gates
+
+Needs the model layer running:  ~/projects/bonsai/scripts/serve.sh
+Tune contextual passes:         AIRPLANE_EVAL_PASSES=5 ./run.sh eval
 EOF
   ;;
 esac

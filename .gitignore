@@ -37,3 +37,5 @@ spike/runs/
 # Seed transcript — raw research convo, NOT for the public/PrismML-facing repo.
 # Kept locally as a seed; the distilled artifact is docs/seed/bonsai-ecosystem-brief.md
 full-ctx.md
+spike/server.log
+eval/last-run.json

@@ -1,0 +1,17 @@
+[package]
+name = "airplane-cli"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[[bin]]
+name = "airplane"
+path = "src/main.rs"
+
+[dependencies]
+airplane-core = { path = "../../crates/airplane-core" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+anyhow = { workspace = true }
+ureq = { version = "2", features = ["json"] }

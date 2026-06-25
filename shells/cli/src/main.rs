@@ -108,8 +108,17 @@ fn run_eval(use_model: bool) -> Result<EvalOutcome> {
     let mut acc = Score::default();
     let mut blocked = Vec::new();
     let mut per_note = String::new();
+    let ids = note_ids(&golden)?;
+    let total_notes = ids.len();
 
-    for id in note_ids(&golden)? {
+    for (idx, id) in ids.into_iter().enumerate() {
+        eprintln!(
+            "eval {}/{} {} ({} passes)",
+            idx + 1,
+            total_notes,
+            id,
+            passes
+        );
         let text = std::fs::read_to_string(golden.join(format!("{id}.txt")))?;
         let exp: Expected = serde_json::from_str(&std::fs::read_to_string(
             expected.join(format!("{id}.json")),
@@ -126,10 +135,7 @@ fn run_eval(use_model: bool) -> Result<EvalOutcome> {
             blocked.push(id.clone());
             "BLOCK"
         };
-        per_note.push_str(&format!(
-            "{id}  gate={gate}  redactions={}\n",
-            res.redaction_map.len()
-        ));
+        per_note.push_str(&format!("{id}  gate={gate}\n"));
     }
     finalize(&mut acc);
 
@@ -140,6 +146,7 @@ fn run_eval(use_model: bool) -> Result<EvalOutcome> {
          decoding        : {} seeded passes unioned (temp 0.5, seeds 42..)  [deterministic]\n\
          notes           : {}\n\
          recall          : {:.1}%  ({}/{})\n\
+         precision       : {:.1}%  ({}/{} predicted)\n\
          hard-case recall: {:.1}%  ({}/{})\n\
          leakage (missed): {}\n\
          over-redactions : {}\n\
@@ -156,6 +163,9 @@ fn run_eval(use_model: bool) -> Result<EvalOutcome> {
         acc.recall * 100.0,
         acc.caught,
         acc.total_labels,
+        acc.precision * 100.0,
+        acc.caught,
+        acc.caught + acc.over_redactions,
         acc.hard_recall * 100.0,
         acc.hard_caught,
         acc.hard_total,

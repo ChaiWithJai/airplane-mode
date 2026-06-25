@@ -29,9 +29,8 @@ pub struct Sampling {
     pub top_k: u32,
     pub top_p: f32,
     pub max_tokens: u32,
-    /// Fixed RNG seed. With a seed, even temperature>0 is reproducible (llama.cpp is
-    /// deterministic given seed+params) — so eval keeps the sampling path the model
-    /// extracts best under *and* a byte-stable `golden-run.txt`.
+    /// Fixed RNG seed. Eval keeps the sampling path the model extracts best under and
+    /// reports deterministic score/gate outputs rather than raw model span churn.
     pub seed: u64,
 }
 

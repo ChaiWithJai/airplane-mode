@@ -14,6 +14,7 @@ pub struct Score {
     pub total_labels: usize,
     pub caught: usize,
     pub recall: f64,
+    pub precision: f64,
     pub leakage: usize,
     pub over_redactions: usize,
     pub hard_total: usize,
@@ -76,6 +77,12 @@ pub fn finalize(acc: &mut Score) {
     acc.leakage = acc.missed.len();
     acc.recall = if acc.total_labels > 0 {
         acc.caught as f64 / acc.total_labels as f64
+    } else {
+        1.0
+    };
+    let predicted_total = acc.caught + acc.over_redactions;
+    acc.precision = if predicted_total > 0 {
+        acc.caught as f64 / predicted_total as f64
     } else {
         1.0
     };

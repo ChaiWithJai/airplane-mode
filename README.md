@@ -12,13 +12,14 @@ The demo *is* the trust boundary, made watchable. And its architecture *is* the 
 
 ---
 
-## ⚠️ Status: seeded, not yet built
+## Status: core + CLI + web Beat 1 built and working
 
-This is the **seeding** of the repo — the design is decided and the build is organized as a loop; **no application code is written yet.** What's here:
+- **The trust core** — `airplane-core` (Rust): rules executor + verifier gate + pipeline + pack loader, behind four ports (ADR-014). clippy-clean, unit-tested.
+- **Reproduction (CLI)** — `./run.sh eval` runs the scrub over a 20-note synthetic golden set: **rules ∪ Bonsai-1.7B → 100% recall / 0 leakage** through owned code, deterministic (`eval/golden-run.txt`).
+- **Beat 1 live (web)** — `./run.sh web` serves the on-phone "airplane-mode loop" (capture → on-device scrub → verifier gate → clean record → held-while-offline → flush → Slack card). Runbook: **[docs/demo/onboarding.md](docs/demo/onboarding.md)**.
+- **The design + build loop** — `CANON.md` indexes the design corpus; `AGENTS.md` + `backlog/` run the build as a harnessed loop.
 
-- **The bet, the design, the canon** — `CANON.md` indexes the full design corpus in `files/`.
-- **The architecture** — a portable Rust core + ports (ADR-014). See `docs/superpowers/specs/2026-06-25-portable-core-architecture-design.md`.
-- **The build loop** — `AGENTS.md` (operating manual) + `backlog/` (M0–M5 work queue) + `gates/` (the harness).
+Still ahead: M2 (structurer/follow-up polish + the two ethical gates), the MCP shell, optional native iOS.
 
 ## Run the build loop (drop it into Codex or Claude Code)
 
@@ -55,6 +56,16 @@ Everything specific to a practice (or vertical) is a **pack** — five declarati
 ## What this is — honestly
 
 A demo and a pattern: synthetic data only, one phone, one channel. We show the *shape* of what's possible, not a finished product. And we don't overclaim the model: PrismML's "intelligence density" is a self-coined metric that loses on raw benchmarks; "1-bit" is sign-only weights with grouped scale factors; frontier cloud still wins peak quality. The bet isn't that this beats GPT — it's that **the most sensitive work should run where the data lives**, and on a six-year-old phone it already can.
+
+## Run Beat 1 on your phone
+
+```bash
+~/projects/bonsai/scripts/serve.sh    # the model server (separate terminal)
+./run.sh web                          # the UI — prints the URL
+```
+
+On a phone on the same Wi-Fi, open the printed `http://<laptop-ip>:8088`.
+On managed/corporate/guest Wi-Fi that blocks device-to-device traffic, use your iPhone's Personal Hotspot instead — full steps and troubleshooting in **[docs/demo/onboarding.md](docs/demo/onboarding.md)**.
 
 ## Repo map
 

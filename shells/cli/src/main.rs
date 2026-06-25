@@ -88,8 +88,8 @@ struct EvalOutcome {
 
 /// Number of seeded contextual passes to union. Override with AIRPLANE_EVAL_PASSES.
 fn eval_passes() -> u32 {
-    // 3 passes clears the 99% recall gate on the golden set; more buys margin for unseen notes.
-    std::env::var("AIRPLANE_EVAL_PASSES").ok().and_then(|s| s.parse().ok()).unwrap_or(3)
+    // Union across seeded passes is recall-first; 5 clears the 99% gate on the golden set.
+    std::env::var("AIRPLANE_EVAL_PASSES").ok().and_then(|s| s.parse().ok()).unwrap_or(5)
 }
 
 fn run_eval(use_model: bool) -> Result<EvalOutcome> {

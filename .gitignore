@@ -39,3 +39,6 @@ spike/runs/
 full-ctx.md
 spike/server.log
 eval/last-run.json
+spike/*.log
+spike/web.log
+/*.png

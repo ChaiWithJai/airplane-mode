@@ -154,6 +154,7 @@ flowchart LR
 | 012 | Reward = autonomy delta, never engagement | RFC-001 | Accepted (highest-stakes) |
 | 013 | Policy *training* deferred; v1 grows the environment only | RFC-001 | Accepted |
 | **014** | **Portable Rust core + ports; Swift is a shell, not the core** (resolves D1) | `files/adr-014-portable-rust-core.md` | Accepted 2026-06-25 |
+| **015** | **Airplane mode simulated in the web demo; splash screen removed** (literal radio-off proof deferred to native/on-device) | `files/adr-015-airplane-mode-simulated-in-web-demo.md` | Accepted 2026-06-25 |
 
 ---
 

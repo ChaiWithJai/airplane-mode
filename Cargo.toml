@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["crates/airplane-core", "shells/cli", "shells/web"]
+members = ["crates/airplane-core", "shells/cli", "shells/mcp", "shells/web"]
 
 [workspace.package]
 edition = "2021"

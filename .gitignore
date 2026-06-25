@@ -1,0 +1,39 @@
+# Models — NEVER commit weights (fetched by hash via run.sh)
+*.gguf
+*.mlx
+models/
+weights/
+
+# Rust
+/target/
+**/target/
+Cargo.lock
+
+# Swift / iOS
+shells/ios/build/
+shells/ios/Pods/
+shells/ios/DerivedData/
+*.xcuserstate
+
+# Python (spike harness)
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Secrets / local config
+.env
+.env.*
+*.local
+
+# OS / tooling
+.DS_Store
+.playwright-mcp/
+node_modules/
+
+# Spike scratch (keep reports, ignore raw runs)
+spike/runs/
+
+# Seed transcript — raw research convo, NOT for the public/PrismML-facing repo.
+# Kept locally as a seed; the distilled artifact is docs/seed/bonsai-ecosystem-brief.md
+full-ctx.md

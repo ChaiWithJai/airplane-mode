@@ -1,0 +1,21 @@
+{
+  "id": "note-13",
+  "clean": false,
+  "redactions": [
+    {
+      "text": "Carlos",
+      "entity": "PERSON",
+      "hard": true
+    },
+    {
+      "text": "carlos.mendez88@zoho.com",
+      "entity": "EMAIL",
+      "hard": false
+    },
+    {
+      "text": "720-555-0198",
+      "entity": "PHONE",
+      "hard": false
+    }
+  ]
+}

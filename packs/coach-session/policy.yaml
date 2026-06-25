@@ -1,0 +1,16 @@
+# Scrub policy AND reward policy — the ethic, expressed as config.
+deidentification:
+  profile: safe-harbor          # all 18 Safe Harbor identifiers
+  recallThreshold: 0.99         # → the recall gate; a pack below this does not ship
+  onResidual: block             # default-deny egress on any residual hit (Constitution IX)
+
+followup:
+  cadence: client_controlled    # the client owns the interrupt (Constitution VIII)
+  reward:
+    # → reward-lint gate: the reward may reference autonomy signals ONLY.
+    autonomySignals: [commitment_completed, self_initiated, reduced_prompt_need]
+    forbiddenTerms:  [engagement, retention, session_count, app_opens]
+  scopeBoundary:
+    # → scope-boundary gate: coach ≠ therapist.
+    escalationRequired: true
+    onClinicalRisk: surface_human_escalation

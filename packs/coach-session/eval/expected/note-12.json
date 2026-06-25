@@ -1,0 +1,26 @@
+{
+  "id": "note-12",
+  "clean": false,
+  "redactions": [
+    {
+      "text": "Wren",
+      "entity": "PERSON",
+      "hard": true
+    },
+    {
+      "text": "Her mother, who recently moved into the memory-care wing at Lakeshore Manor",
+      "entity": "FAMILY_DETAIL",
+      "hard": true
+    },
+    {
+      "text": "Lakeshore Manor",
+      "entity": "ORG",
+      "hard": true
+    },
+    {
+      "text": "Cal",
+      "entity": "PERSON",
+      "hard": true
+    }
+  ]
+}

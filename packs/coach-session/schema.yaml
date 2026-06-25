@@ -1,0 +1,13 @@
+record: coach-session
+fields:
+  - { name: client_pseudonym, type: string,     required: true }
+  - { name: themes,           type: [string],   required: true }
+  - { name: commitments,      type: [commitment], required: true }
+  - { name: follow_ups,       type: [string] }
+  - { name: risk_flags,       type: [string] }
+  - { name: next_touch,       type: date }
+types:
+  commitment:
+    text:   string
+    due:    date
+    status: "enum[open,done,dropped]"

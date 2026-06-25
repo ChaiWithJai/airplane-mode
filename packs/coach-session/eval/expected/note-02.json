@@ -1,0 +1,31 @@
+{
+  "id": "note-02",
+  "clean": false,
+  "redactions": [
+    {
+      "text": "Devon",
+      "entity": "PERSON",
+      "hard": true
+    },
+    {
+      "text": "Cedar Mountain Hospital",
+      "entity": "ORG",
+      "hard": true
+    },
+    {
+      "text": "his daughter who just started at Northwestern",
+      "entity": "FAMILY_DETAIL",
+      "hard": true
+    },
+    {
+      "text": "devon.k.harper@fastmail.com",
+      "entity": "EMAIL",
+      "hard": false
+    },
+    {
+      "text": "503-555-0182",
+      "entity": "PHONE",
+      "hard": false
+    }
+  ]
+}

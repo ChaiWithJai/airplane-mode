@@ -1,0 +1,18 @@
+apiVersion: airplane/v1
+kind: Pack
+metadata:
+  name: coach-session
+  version: 1.0.0
+  targetCore: ">=1.0.0 <2.0.0"
+spec:
+  recognizers:
+    - recognizers/members.json
+    - recognizers/people.json
+  schema: schema.yaml
+  policy: policy.yaml
+  sink:   sink.yaml
+  eval:   eval/
+# Signed at release (keyless Sigstore/Fulcio + Rekor). Placeholder until M4 signing.
+signature:
+  keyless: true
+  rekorLog: "<uuid-after-signing>"

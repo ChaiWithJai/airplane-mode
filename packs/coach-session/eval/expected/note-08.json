@@ -1,0 +1,26 @@
+{
+  "id": "note-08",
+  "clean": false,
+  "redactions": [
+    {
+      "text": "Rosa",
+      "entity": "PERSON",
+      "hard": true
+    },
+    {
+      "text": "the last day of school before summer",
+      "entity": "DATE",
+      "hard": true
+    },
+    {
+      "text": "Hawthorne Street",
+      "entity": "ADDRESS",
+      "hard": true
+    },
+    {
+      "text": "Daniel",
+      "entity": "PERSON",
+      "hard": true
+    }
+  ]
+}

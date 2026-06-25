@@ -1,0 +1,26 @@
+{
+  "id": "note-17",
+  "clean": false,
+  "redactions": [
+    {
+      "text": "Imani",
+      "entity": "PERSON",
+      "hard": true
+    },
+    {
+      "text": "Her wife, who returned to work as a trauma surgeon at Gulfport General",
+      "entity": "FAMILY_DETAIL",
+      "hard": true
+    },
+    {
+      "text": "Gulfport General",
+      "entity": "ORG",
+      "hard": true
+    },
+    {
+      "text": "CM-913580",
+      "entity": "MEMBER_ID",
+      "hard": false
+    }
+  ]
+}

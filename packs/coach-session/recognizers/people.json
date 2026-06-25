@@ -1,0 +1,10 @@
+{
+  "name": "coach_partner_orgs",
+  "supported_entity": "ORG",
+  "description": "Org-specific extension point: partner orgs / employers / internal codes this practice references. Contextual names and disclosed relationships are caught by the Bonsai layer, NOT regex — this file is only the structured, practice-known entities a new clinic would add.",
+  "patterns": [
+    { "name": "internal_ref_code", "regex": "\\bRC-[A-Z]{2}\\d{3}\\b", "score": 0.85 }
+  ],
+  "deny_list": ["Cedar Mountain Hospital", "Riverside Day School"],
+  "context": ["works at", "employer", "clinic", "partner", "referred by"]
+}

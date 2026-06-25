@@ -1,0 +1,31 @@
+{
+  "id": "note-09",
+  "clean": false,
+  "redactions": [
+    {
+      "text": "CM-771206",
+      "entity": "MEMBER_ID",
+      "hard": false
+    },
+    {
+      "text": "Kit",
+      "entity": "PERSON",
+      "hard": true
+    },
+    {
+      "text": "Northstar Credit Union",
+      "entity": "ORG",
+      "hard": true
+    },
+    {
+      "text": "Cleveland",
+      "entity": "LOCATION",
+      "hard": true
+    },
+    {
+      "text": "kit.delgado@gmail.com",
+      "entity": "EMAIL",
+      "hard": false
+    }
+  ]
+}

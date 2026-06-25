@@ -1,0 +1,26 @@
+{
+  "id": "note-03",
+  "clean": false,
+  "redactions": [
+    {
+      "text": "Priya",
+      "entity": "PERSON",
+      "hard": true
+    },
+    {
+      "text": "this past Thanksgiving",
+      "entity": "DATE",
+      "hard": true
+    },
+    {
+      "text": "Maple Crest Avenue",
+      "entity": "ADDRESS",
+      "hard": true
+    },
+    {
+      "text": "Sundial Marketing",
+      "entity": "ORG",
+      "hard": true
+    }
+  ]
+}

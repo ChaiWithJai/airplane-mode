@@ -1,0 +1,21 @@
+{
+  "id": "note-14",
+  "clean": false,
+  "redactions": [
+    {
+      "text": "RC-NW204",
+      "entity": "ORG",
+      "hard": false
+    },
+    {
+      "text": "Sunny",
+      "entity": "PERSON",
+      "hard": true
+    },
+    {
+      "text": "Meridian Freight",
+      "entity": "ORG",
+      "hard": true
+    }
+  ]
+}

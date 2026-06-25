@@ -1,0 +1,31 @@
+{
+  "id": "note-01",
+  "clean": false,
+  "redactions": [
+    {
+      "text": "Maria Alvarez",
+      "entity": "PERSON",
+      "hard": true
+    },
+    {
+      "text": "Brightwater Logistics",
+      "entity": "ORG",
+      "hard": true
+    },
+    {
+      "text": "Marcus",
+      "entity": "PERSON",
+      "hard": true
+    },
+    {
+      "text": "CM-204815",
+      "entity": "MEMBER_ID",
+      "hard": false
+    },
+    {
+      "text": "the second Tuesday of next month",
+      "entity": "DATE",
+      "hard": true
+    }
+  ]
+}

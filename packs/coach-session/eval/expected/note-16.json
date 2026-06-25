@@ -1,0 +1,26 @@
+{
+  "id": "note-16",
+  "clean": false,
+  "redactions": [
+    {
+      "text": "CM-845190",
+      "entity": "MEMBER_ID",
+      "hard": false
+    },
+    {
+      "text": "Bram",
+      "entity": "PERSON",
+      "hard": true
+    },
+    {
+      "text": "Asheville",
+      "entity": "LOCATION",
+      "hard": true
+    },
+    {
+      "text": "the first weekend after New Year's",
+      "entity": "DATE",
+      "hard": true
+    }
+  ]
+}

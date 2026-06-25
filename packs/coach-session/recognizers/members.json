@@ -1,0 +1,9 @@
+{
+  "name": "coach_member_id",
+  "supported_entity": "MEMBER_ID",
+  "description": "This practice's client/member identifier format. Structured -> caught by the rules executor.",
+  "patterns": [
+    { "name": "cm_id", "regex": "\\bCM-\\d{6}\\b", "score": 0.9 }
+  ],
+  "context": ["member", "client id", "ref", "case"]
+}

@@ -1,0 +1,26 @@
+{
+  "id": "note-05",
+  "clean": false,
+  "redactions": [
+    {
+      "text": "Eleanor",
+      "entity": "PERSON",
+      "hard": true
+    },
+    {
+      "text": "Riverside Day School",
+      "entity": "ORG",
+      "hard": true
+    },
+    {
+      "text": "e.whitfield@protonmail.com",
+      "entity": "EMAIL",
+      "hard": false
+    },
+    {
+      "text": "Gerald",
+      "entity": "PERSON",
+      "hard": true
+    }
+  ]
+}

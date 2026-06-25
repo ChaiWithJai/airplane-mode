@@ -1,0 +1,21 @@
+{
+  "id": "note-18",
+  "clean": false,
+  "redactions": [
+    {
+      "text": "Reginald",
+      "entity": "PERSON",
+      "hard": true
+    },
+    {
+      "text": "Pinebrook Robotics",
+      "entity": "ORG",
+      "hard": true
+    },
+    {
+      "text": "(208) 555-0176",
+      "entity": "PHONE",
+      "hard": false
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+kind: slack
+channelMap:
+  default: "#coach-records"
+credentials:
+  source: keychain          # the secret is SOURCED at runtime, never stored in the pack
+  ref: slack-bot-token
+receives: deidentified-record-only   # structural: the sink can never see PHI

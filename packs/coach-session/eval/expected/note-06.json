@@ -1,0 +1,26 @@
+{
+  "id": "note-06",
+  "clean": false,
+  "redactions": [
+    {
+      "text": "Aisha",
+      "entity": "PERSON",
+      "hard": true
+    },
+    {
+      "text": "the week before her birthday",
+      "entity": "DATE",
+      "hard": true
+    },
+    {
+      "text": "Halcyon Tech",
+      "entity": "ORG",
+      "hard": true
+    },
+    {
+      "text": "CM-559013",
+      "entity": "MEMBER_ID",
+      "hard": false
+    }
+  ]
+}

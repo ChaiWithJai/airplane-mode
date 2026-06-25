@@ -1,0 +1,26 @@
+{
+  "id": "note-11",
+  "clean": false,
+  "redactions": [
+    {
+      "text": "Nathaniel",
+      "entity": "PERSON",
+      "hard": true
+    },
+    {
+      "text": "Vireo Analytics",
+      "entity": "ORG",
+      "hard": true
+    },
+    {
+      "text": "the Monday before Memorial Day",
+      "entity": "DATE",
+      "hard": true
+    },
+    {
+      "text": "CM-602347",
+      "entity": "MEMBER_ID",
+      "hard": false
+    }
+  ]
+}

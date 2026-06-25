@@ -1,0 +1,21 @@
+{
+  "id": "note-15",
+  "clean": false,
+  "redactions": [
+    {
+      "text": "Delphine",
+      "entity": "PERSON",
+      "hard": true
+    },
+    {
+      "text": "Juniper Bend Road",
+      "entity": "ADDRESS",
+      "hard": true
+    },
+    {
+      "text": "the day after the autumn equinox",
+      "entity": "DATE",
+      "hard": true
+    }
+  ]
+}

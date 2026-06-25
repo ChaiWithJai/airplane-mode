@@ -1,0 +1,31 @@
+{
+  "id": "note-07",
+  "clean": false,
+  "redactions": [
+    {
+      "text": "Tomas",
+      "entity": "PERSON",
+      "hard": true
+    },
+    {
+      "text": "Mateo",
+      "entity": "PERSON",
+      "hard": true
+    },
+    {
+      "text": "his son Mateo started kindergarten this fall",
+      "entity": "FAMILY_DETAIL",
+      "hard": true
+    },
+    {
+      "text": "the corner of 4th and Birch in Glenndale",
+      "entity": "ADDRESS",
+      "hard": true
+    },
+    {
+      "text": "(415) 555-0143",
+      "entity": "PHONE",
+      "hard": false
+    }
+  ]
+}

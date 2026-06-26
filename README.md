@@ -214,6 +214,11 @@ It refreshes `/api/status` and shows Slack/model health, active phone capability
 recent PHI-free browser requests, and the current phone URLs detected from the
 edge server.
 
+For the live phone runbook, latency expectations, and proof commands, see
+[`docs/demo/phone-https-observability.md`](docs/demo/phone-https-observability.md).
+The known-good HTTPS sample path is about 15-30 seconds; Browser GPU first-load
+warmup is treated as the benchmark challenge, not the blocker for the Slack demo.
+
 If you need HTTPS to test browser GPU behavior on a phone, do not tunnel the full
 scrub app through Cloudflare. Use local HTTPS for the real app:
 

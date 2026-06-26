@@ -539,12 +539,17 @@ fn follow_up_record(record: &Value, risk_flags: &[String]) -> Value {
 // ---- handlers ----------------------------------------------------------------
 
 fn handle_scrub(body: &str) -> Result<Value> {
+    let started = Instant::now();
     let input: Value = serde_json::from_str(body).context("parse request body")?;
     let text = input["text"].as_str().unwrap_or("").to_string();
+    let backend = input["backend"].as_str().unwrap_or("mac-edge").to_string();
+    let word_count = text.split_whitespace().count();
 
     let pack = Pack::load(&pack_path()).context("load coach-session pack")?;
     let model = LlamaServer::default();
+    let scrub_started = Instant::now();
     let res = scrub(&text, &pack.rules, Some(&model), Sampling::eval(), PASSES)?;
+    let scrub_ms = scrub_started.elapsed().as_millis() as u64;
 
     let redactions: Vec<Value> = res
         .redaction_map
@@ -557,15 +562,38 @@ fn handle_scrub(body: &str) -> Result<Value> {
     };
 
     // structurer runs on the gate-clean text only
+    let structure_started = Instant::now();
     let record = structure(&model, &res.scrubbed_text);
+    let structure_ms = structure_started.elapsed().as_millis() as u64;
     let risk_flags = clinical_risk_flags(&text);
     let followup = follow_up_record(&record, &risk_flags);
+    let total_ms = started.elapsed().as_millis() as u64;
+    eprintln!(
+        "scrub: backend={} words={} passes={} redactions={} residual={} scrub_ms={} structure_ms={} total_ms={}",
+        backend,
+        word_count,
+        PASSES,
+        redactions.len(),
+        residual,
+        scrub_ms,
+        structure_ms,
+        total_ms
+    );
 
     Ok(json!({
         "scrubbed_text": res.scrubbed_text,
         "redactions": redactions,
         "gate_pass": res.gate.is_pass(),
         "residual_count": residual,
+        "observability": {
+            "backend_requested": backend,
+            "word_count": word_count,
+            "passes": PASSES,
+            "scrub_ms": scrub_ms,
+            "structure_ms": structure_ms,
+            "total_ms": total_ms,
+            "network": network_status(&configured_http_port()),
+        },
         "record": {
             "client_pseudonym": pseudonym(&res.redaction_map),
             "themes": record["themes"],
@@ -811,12 +839,24 @@ fn model_status() -> Value {
     })
 }
 
+fn configured_http_port() -> String {
+    std::env::var("AIRPLANE_WEB_ADDR")
+        .unwrap_or_else(|_| DEFAULT_ADDR.to_string())
+        .rsplit_once(':')
+        .map(|(_, p)| p.to_string())
+        .unwrap_or_else(|| "8099".to_string())
+}
+
 fn network_status(http_port: &str) -> Value {
     let https_port = std::env::var("AIRPLANE_HTTPS_PORT").unwrap_or_else(|_| "8443".to_string());
+    let ips = local_ips();
+    let primary_ip = ips.first().cloned().unwrap_or_else(|| "127.0.0.1".to_string());
     json!({
-        "ips": local_ips(),
+        "ips": ips,
         "http_port": http_port,
-        "https_port": https_port
+        "https_port": https_port,
+        "phone_http_url": format!("http://{primary_ip}:{http_port}"),
+        "phone_https_url": format!("https://{primary_ip}:{https_port}")
     })
 }
 

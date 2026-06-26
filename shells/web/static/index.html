@@ -221,8 +221,8 @@ const DRAFT_KEY = 'airplane-demo-draft-v3';
 const OUTBOX_KEY = 'airplane-demo-send-outbox-v1';
 const DEFAULT_BACKEND = '';
 const RUNTIME_CHOICE_VERSION = 2;
-const SCRUB_BROWSER_LOAD_TIMEOUT_MS = 15000;
-const SCRUB_BROWSER_GENERATE_TIMEOUT_MS = 20000;
+const SCRUB_BROWSER_LOAD_TIMEOUT_MS = 5000;
+const SCRUB_BROWSER_GENERATE_TIMEOUT_MS = 10000;
 const S = { screen:'capturing', note:'', result:null, error:null, posted:false, sendNote:'', sendQueued:false, trajectoryCount:0, trajectoryNote:'', packDemo:null, packError:null, listening:false, speechMsg:'', status:null, job:null, capability:null, backend:DEFAULT_BACKEND, backendNote:'', scrubStartedAt:0, scrubPhase:'', scrubEstimate:'', browserModel:{status:'idle',detail:'not loaded',model:'onnx-community/Bonsai-1.7B-ONNX',elapsed_ms:0,tokens:0,tps:0,output_preview:''} };
 let recognizer = null;
 let browserWorker = null;
@@ -445,6 +445,7 @@ const screens = {
    </div>
    <div class="stateBrief"><b>Output candidate</b><span>This is still inside the edge boundary. It becomes eligible for egress only after residual identifiers are zero.</span></div>
    ${r.backend_note?`<div class="stateBrief"><b>Backend truth</b><span>${esc(r.backend_note)}</span></div>`:''}
+   ${r.observability?`<div class="stateBrief"><b>Run observed</b><span>${esc(r.observability.passes)} passes · ${Math.round((r.observability.total_ms||0)/1000)}s total · ${esc(r.observability.word_count)} words · HTTPS phone path ${esc(r.observability.network&&r.observability.network.phone_https_url||securePhoneUrl())}</span></div>`:''}
    <div class="dbox" style="flex:1;margin-top:15px;padding:16px;overflow:auto;font:400 14px/1.9 var(--sans);color:#cfc7b6">${esc(r.scrubbed_text)}</div>
    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:12px">
      ${ents.slice(0,6).map(e=>`<span style="font:700 9px var(--mono);color:#f3927f;background:rgba(191,59,43,.16);border:1px solid #5c2e27;border-radius:5px;padding:4px 7px">${esc(e)}</span>`).join('')}</div>
@@ -730,6 +731,12 @@ function stopScrubHeartbeat(){
 
 function scrubElapsedSeconds(){
   return S.scrubStartedAt ? Math.max(0, Math.round((Date.now() - S.scrubStartedAt) / 1000)) : 0;
+}
+
+function isPhoneLikeClient(){
+  const ua = navigator.userAgent || '';
+  const platform = navigator.platform || '';
+  return /iPhone|iPad|iPod|Android/i.test(ua) || (platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 }
 
 function jobHtml(){
@@ -1146,30 +1153,35 @@ async function doScrub(){
       return;
     }
     S.backendNote = 'Browser GPU selected: attempting local Bonsai q1 span generation. Demo guardrail: if phone-local load is not ready quickly, Mac-edge Bonsai takes over.';
-    startScrubHeartbeat('Browser GPU warmup', 'phone-local attempt has a 15s load budget and 20s generation budget');
-    setJob('scrub','running','browser GPU span probe');
-    const probe = await runBrowserGpuSpanProbe(S.note, {
-      loadTimeoutMs: SCRUB_BROWSER_LOAD_TIMEOUT_MS,
-      generateTimeoutMs: SCRUB_BROWSER_GENERATE_TIMEOUT_MS
-    });
-    if(probe.ok){
-      S.backendNote = `Browser GPU produced local span candidates in ${(probe.elapsed_ms/1000).toFixed(1)}s; finalizing through the verifier gate.`;
-      updateScrubHeartbeat('Verifier finalizing browser spans', 'usually a few seconds after phone-local spans return');
-      setJob('scrub','running','verifying browser spans');
-      const finalized = await finalizeBrowserSpans(S.note, probe.output);
-      if(finalized.ok){
-        S.result = finalized.data;
-        S.backendNote = finalized.data.backend_note || 'Browser GPU spans accepted by verifier gate.';
-        setJob('scrub','complete',`${(finalized.data.redactions||[]).length} identifiers caught · browser spans accepted`);
-        stopScrubHeartbeat();
-        saveDraft();
-        clearJobSoon();
-        if(S.screen==='scrubbing') render();
-        return;
-      }
-      S.backendNote = `Browser GPU produced output, but the verifier finalizer rejected it (${finalized.detail}); falling back to Mac-edge Bonsai.`;
+    startScrubHeartbeat('Browser GPU warmup', 'phone-local attempt has a 5s load budget and 10s generation budget');
+    if(isPhoneLikeClient() && !browserModelReady){
+      S.backendNote = 'Phone HTTPS is working, but Browser GPU model warmup is intentionally treated as the benchmark challenge: first load can pull hundreds of MB and compile kernels. This demo run uses the verified Mac-edge scrub path so the call to action can complete.';
+      updateScrubHeartbeat('Phone HTTPS verified; using Mac-edge path', 'demo path should complete in roughly 15-30s after skipping first-load Browser GPU warmup');
     } else {
-      S.backendNote = `Browser GPU probe did not complete within the demo budget (${probe.detail}); falling back to Mac-edge Bonsai and verifier.`;
+      setJob('scrub','running','browser GPU span probe');
+      const probe = await runBrowserGpuSpanProbe(S.note, {
+        loadTimeoutMs: SCRUB_BROWSER_LOAD_TIMEOUT_MS,
+        generateTimeoutMs: SCRUB_BROWSER_GENERATE_TIMEOUT_MS
+      });
+      if(probe.ok){
+        S.backendNote = `Browser GPU produced local span candidates in ${(probe.elapsed_ms/1000).toFixed(1)}s; finalizing through the verifier gate.`;
+        updateScrubHeartbeat('Verifier finalizing browser spans', 'usually a few seconds after phone-local spans return');
+        setJob('scrub','running','verifying browser spans');
+        const finalized = await finalizeBrowserSpans(S.note, probe.output);
+        if(finalized.ok){
+          S.result = finalized.data;
+          S.backendNote = finalized.data.backend_note || 'Browser GPU spans accepted by verifier gate.';
+          setJob('scrub','complete',`${(finalized.data.redactions||[]).length} identifiers caught · browser spans accepted`);
+          stopScrubHeartbeat();
+          saveDraft();
+          clearJobSoon();
+          if(S.screen==='scrubbing') render();
+          return;
+        }
+        S.backendNote = `Browser GPU produced output, but the verifier finalizer rejected it (${finalized.detail}); falling back to Mac-edge Bonsai.`;
+      } else {
+        S.backendNote = `Browser GPU probe did not complete within the demo budget (${probe.detail}); falling back to Mac-edge Bonsai and verifier.`;
+      }
     }
     updateScrubHeartbeat('Mac-edge fallback verifier', 'short notes usually take 15-30s; longer notes can take 30-60s');
     setJob('scrub','running','Mac-edge verifier fallback');

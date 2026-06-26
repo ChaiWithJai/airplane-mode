@@ -4,6 +4,8 @@ Run the on-device PHI-scrub demo on a phone in about five minutes: a clean web s
 
 For architecture, network topology, and data-flow diagrams, see
 [`docs/demo/system-network-data-flows.md`](system-network-data-flows.md).
+For a narrative walkthrough, verification guide, workload profile, and worked examples,
+see [`docs/demo/how-the-demo-works.md`](how-the-demo-works.md).
 
 ## Prerequisites
 

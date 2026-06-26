@@ -11,7 +11,7 @@ BIN="target/debug/airplane"
 case "$verb" in
   eval)   build; shift; "$BIN" eval "$@" ;;
   scrub)  build; shift; "$BIN" scrub "${1:-}" ;;
-  gates)  build; "$BIN" gates ;;
+  gates)  build; "$BIN" gates; ./scripts/smoke-ethical-gate-fixtures.sh --bin "$BIN" ;;
   web)    cargo build -q --bin airplane-web; target/debug/airplane-web ;;
   mcp)    cargo build -q --bin airplane-mcp; target/debug/airplane-mcp ;;
   slack-smoke) shift; ./scripts/smoke-slack-sink.sh "$@" ;;

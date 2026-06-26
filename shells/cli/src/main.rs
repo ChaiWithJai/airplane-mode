@@ -307,6 +307,7 @@ fn cmd_scrub(text: &str) -> Result<()> {
 fn cmd_gates() -> Result<()> {
     let pack_dir = pack_dir();
     let mut failed = false;
+    let mut pre_model_failed = false;
 
     // pack-blindness (structural, no model)
     match Pack::validate_blindness(&pack_dir) {
@@ -314,6 +315,25 @@ fn cmd_gates() -> Result<()> {
         Err(e) => {
             println!("gate pack-blindness : FAIL — {e}");
             failed = true;
+            pre_model_failed = true;
+        }
+    }
+
+    let pack = Pack::load(&pack_dir)?;
+    match pack.validate_reward_lint() {
+        Ok(()) => println!("gate reward-lint    : PASS"),
+        Err(e) => {
+            println!("gate reward-lint    : FAIL — {e}");
+            failed = true;
+            pre_model_failed = true;
+        }
+    }
+    match pack.validate_scope_boundary() {
+        Ok(()) => println!("gate scope-boundary : PASS"),
+        Err(e) => {
+            println!("gate scope-boundary : FAIL — {e}");
+            failed = true;
+            pre_model_failed = true;
         }
     }
     match Pack::validate_signature_provenance(&pack_dir) {
@@ -321,6 +341,7 @@ fn cmd_gates() -> Result<()> {
         Err(e) => {
             println!("gate signature/prov : FAIL — {e}");
             failed = true;
+            pre_model_failed = true;
         }
     }
     match Pack::validate_manifest_revocation(Path::new("manifest.yaml"), &pack_dir) {
@@ -328,11 +349,15 @@ fn cmd_gates() -> Result<()> {
         Err(e) => {
             println!("gate manifest/revoke: FAIL — {e}");
             failed = true;
+            pre_model_failed = true;
         }
     }
 
+    if pre_model_failed {
+        anyhow::bail!("one or more pre-model gates failed");
+    }
+
     // recall + leakage (needs the model)
-    let pack = Pack::load(&pack_dir)?;
     let threshold = pack.policy.deidentification.recall_threshold;
     let out = run_eval(true)?;
     if out.score.recall + 1e-9 >= threshold {
@@ -357,21 +382,6 @@ fn cmd_gates() -> Result<()> {
             println!("    leak {} [{}] {}", m.note, m.entity, m.text);
         }
         failed = true;
-    }
-
-    match pack.validate_reward_lint() {
-        Ok(()) => println!("gate reward-lint    : PASS"),
-        Err(e) => {
-            println!("gate reward-lint    : FAIL — {e}");
-            failed = true;
-        }
-    }
-    match pack.validate_scope_boundary() {
-        Ok(()) => println!("gate scope-boundary : PASS"),
-        Err(e) => {
-            println!("gate scope-boundary : FAIL — {e}");
-            failed = true;
-        }
     }
 
     if failed {

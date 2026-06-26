@@ -50,8 +50,8 @@ The current committed eval target is `eval/golden-run.txt`:
 | Issue | Review state | Evidence |
 |---|---|---|
 | #1 Pack reveal | Covered for demo | Real `recognizers/benefits.json` is wired in `pack.yaml`; `note-21` eval catches `BEN-MH-7741`; `/api/pack-demo` shows five pack surfaces, baseline miss, real-pack catch, and pack eval smoke. `PACK=` is honored by CLI, web, MCP, and parity smoke; invalid pack paths fail closed at load. |
-| #2 Reward-lint | Covered | `Pack::validate_reward_lint`; `./run.sh gates`; web/CLI tests. |
-| #3 Scope-boundary | Covered | `Pack::validate_scope_boundary`; `./run.sh gates`; escalation policy in `policy.yaml`. |
+| #2 Reward-lint | Covered | `Pack::validate_reward_lint`; `./run.sh gates`; web/CLI tests; `scripts/smoke-ethical-gate-fixtures.sh` proves a temporary pack with `usedSignals: [engagement]` fails through the gate entrypoint. |
+| #3 Scope-boundary | Covered | `Pack::validate_scope_boundary`; `./run.sh gates`; escalation policy in `policy.yaml`; `scripts/smoke-ethical-gate-fixtures.sh` proves a temporary pack with `escalationRequired: false` fails through the gate entrypoint. |
 | #4 Follow-up/autonomy | MVP covered | Web structurer emits client-paced follow-up and autonomy signals; clinical-risk language surfaces escalation. Not a trained policy. |
 | #5 Trajectory recorder | Local durable MVP; encryption still open | `/api/trajectory` builds a de-identified `(s,a,r,s')` JSON tuple, gates the exact serialized payload with the same verifier, appends gate-clean records to local JSONL, and returns a count recovered from the store. The web loop records a trajectory only after Slack send succeeds, so preview/failed sends do not count as completed loops. No policy training. Not enclave-encrypted at rest yet. |
 | #6 Themes quality | Covered for sample/demo | Themes are grounded, junk-filtered, and have deterministic fallback tests. |

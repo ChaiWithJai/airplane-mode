@@ -156,7 +156,7 @@ const screens = {
      </div>
      <div class="mono" style="margin-top:7px;font-size:9px;color:#a39a86;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(slackRoute)}</div>
    </div>
-   <textarea id="noteInput" class="note" style="margin-top:12px" placeholder="Session note appears here…" oninput="S.note=this.value">${esc(S.note)}</textarea>
+   <textarea id="noteInput" class="note" style="margin-top:12px" placeholder="Session note appears here…" oninput="handleNoteInput(this.value)">${esc(S.note)}</textarea>
    <div class="noteMeta">
      <button data-act="sample" class="sampleBtn">Use sample note</button>
      <span id="wordCount" class="mono" style="font-size:10px;color:#8a8273">${S.note.trim()?S.note.trim().split(/\s+/).length:0} words</span></div>
@@ -397,6 +397,24 @@ function noteInput(){
   return document.getElementById('noteInput');
 }
 
+function updateCaptureControls(){
+  const hasNote = !!S.note.trim();
+  const wc = document.getElementById('wordCount');
+  if(wc) wc.textContent = `${hasNote ? S.note.trim().split(/\s+/).length : 0} words`;
+  const cm = document.getElementById('captureMsg');
+  if(cm) cm.textContent = S.speechMsg || 'edge capture · verifier gated';
+  const scrub = $screen.querySelector('[data-act="scrub"]');
+  if(scrub){
+    scrub.classList.toggle('disabled', !hasNote);
+    scrub.textContent = hasNote ? 'Scrub on device' : 'Waiting for note';
+  }
+}
+
+function handleNoteInput(value){
+  S.note = value;
+  updateCaptureControls();
+}
+
 function speechRecognitionCtor(){
   return window.SpeechRecognition || window.webkitSpeechRecognition;
 }
@@ -412,10 +430,7 @@ function setCaptureNote(text, msg){
   const n = noteInput();
   if(n && S.screen==='capturing'){
     n.value = S.note;
-    const wc = document.getElementById('wordCount');
-    if(wc) wc.textContent = `${S.note ? S.note.split(/\s+/).length : 0} words`;
-    const cm = document.getElementById('captureMsg');
-    if(cm) cm.textContent = S.speechMsg || 'edge capture · verifier gated';
+    updateCaptureControls();
   } else {
     render();
   }

@@ -814,6 +814,29 @@ async function runBrowserGpuSpanProbe(text){
   return {ok:true, detail:'browser-local Bonsai produced span candidates', elapsed_ms:elapsed, output:generated.output||''};
 }
 
+function parseBrowserSpanOutput(output){
+  const raw = String(output || '').trim();
+  const start = raw.indexOf('{');
+  const end = raw.lastIndexOf('}');
+  if(start < 0 || end <= start) return null;
+  try{
+    const parsed = JSON.parse(raw.slice(start, end + 1));
+    const spans = Array.isArray(parsed.spans) ? parsed.spans : [];
+    return {spans: spans.map(s=>({text:String(s.text||''), entity:String(s.entity||'OTHER')})).filter(s=>s.text.trim())};
+  }catch(_){
+    return null;
+  }
+}
+
+async function finalizeBrowserSpans(text, output){
+  const parsed = parseBrowserSpanOutput(output);
+  if(!parsed || !parsed.spans.length) return {ok:false, detail:'browser output was not valid span JSON'};
+  const res = await fetch('/api/browser-spans',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text, spans:parsed.spans})});
+  const data = await res.json().catch(()=>({error:'browser span finalizer returned '+res.status}));
+  if(!res.ok || data.error) return {ok:false, detail:data.error || ('browser span finalizer returned '+res.status)};
+  return {ok:true, data};
+}
+
 function noteInput(){
   return document.getElementById('noteInput');
 }
@@ -898,7 +921,19 @@ async function doScrub(){
     setJob('scrub','running','browser GPU span probe');
     const probe = await runBrowserGpuSpanProbe(S.note);
     if(probe.ok){
-      S.backendNote = `Browser GPU produced local span candidates in ${(probe.elapsed_ms/1000).toFixed(1)}s; Mac-edge verifier fallback finalizes the record until the span contract is integrated.`;
+      S.backendNote = `Browser GPU produced local span candidates in ${(probe.elapsed_ms/1000).toFixed(1)}s; finalizing through the verifier gate.`;
+      setJob('scrub','running','verifying browser spans');
+      const finalized = await finalizeBrowserSpans(S.note, probe.output);
+      if(finalized.ok){
+        S.result = finalized.data;
+        S.backendNote = finalized.data.backend_note || 'Browser GPU spans accepted by verifier gate.';
+        setJob('scrub','complete',`${(finalized.data.redactions||[]).length} identifiers caught · browser spans accepted`);
+        saveDraft();
+        clearJobSoon();
+        if(S.screen==='scrubbing') render();
+        return;
+      }
+      S.backendNote = `Browser GPU produced output, but the verifier finalizer rejected it (${finalized.detail}); falling back to Mac-edge Bonsai.`;
     } else {
       S.backendNote = `Browser GPU probe did not complete (${probe.detail}); falling back to Mac-edge Bonsai and verifier.`;
     }

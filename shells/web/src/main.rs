@@ -353,6 +353,126 @@ fn handle_scrub(body: &str) -> Result<Value> {
     }))
 }
 
+fn valid_browser_entity(entity: &str) -> bool {
+    matches!(
+        entity,
+        "PERSON"
+            | "DATE"
+            | "LOCATION"
+            | "ADDRESS"
+            | "ORG"
+            | "RELATIONSHIP"
+            | "FAMILY_DETAIL"
+            | "MEMBER_ID"
+            | "PHONE"
+            | "EMAIL"
+            | "OTHER"
+    )
+}
+
+fn browser_span_candidates(input: &Value, text: &str) -> Vec<Span> {
+    let lower = text.to_lowercase();
+    input["spans"]
+        .as_array()
+        .cloned()
+        .unwrap_or_default()
+        .into_iter()
+        .filter_map(|span| {
+            let candidate = span["text"].as_str()?.trim();
+            let entity = span["entity"].as_str().unwrap_or("OTHER").trim();
+            if candidate.is_empty()
+                || candidate.len() > 120
+                || !valid_browser_entity(entity)
+                || !lower.contains(&candidate.to_lowercase())
+            {
+                return None;
+            }
+            Some(Span::new(candidate, entity, "browser-gpu"))
+        })
+        .collect()
+}
+
+fn finalize_spans(text: &str, mut spans: Vec<Span>) -> Result<Value> {
+    let pack = Pack::load(&pack_path()).context("load coach-session pack")?;
+    spans.extend(pack.rules.find(text));
+    spans.sort_by_key(|s| std::cmp::Reverse(s.text.len()));
+    let mut seen = std::collections::HashSet::new();
+    spans.retain(|s| seen.insert(s.key()));
+
+    let has_contextual_browser_span = spans.iter().any(|s| {
+        s.layer == "browser-gpu"
+            && matches!(
+                s.entity.as_str(),
+                "PERSON"
+                    | "DATE"
+                    | "LOCATION"
+                    | "ADDRESS"
+                    | "ORG"
+                    | "RELATIONSHIP"
+                    | "FAMILY_DETAIL"
+            )
+    });
+    if !has_contextual_browser_span {
+        anyhow::bail!("browser spans did not include contextual identifiers; fallback required");
+    }
+
+    let mut scrubbed = text.to_string();
+    for span in &spans {
+        if !span.text.trim().is_empty() {
+            scrubbed = scrubbed.replace(&span.text, &format!("[{}]", span.entity));
+        }
+    }
+
+    let gate = VerifierGate::new(&pack.rules).check(&scrubbed);
+    let residual = match &gate {
+        GateDecision::Block { residual } => residual.len(),
+        GateDecision::Pass => 0,
+    };
+    if !gate.is_pass() {
+        anyhow::bail!("browser span finalization blocked by gate: {residual} residual identifiers");
+    }
+
+    let model = LlamaServer::default();
+    let record = structure(&model, &scrubbed);
+    let risk_flags = clinical_risk_flags(text);
+    let followup = follow_up_record(&record, &risk_flags);
+    let redactions: Vec<Value> = spans
+        .iter()
+        .map(|s| json!({"entity": s.entity, "layer": s.layer}))
+        .collect();
+
+    Ok(json!({
+        "scrubbed_text": scrubbed,
+        "redactions": redactions,
+        "gate_pass": true,
+        "residual_count": 0,
+        "backend": "browser-gpu",
+        "backend_note": "Browser GPU span proposals were exact-matched, unioned with rules, verifier-gated, and accepted.",
+        "record": {
+            "client_pseudonym": pseudonym(&spans),
+            "themes": record["themes"],
+            "commitments": record["commitments"],
+            "follow_ups": followup["follow_ups"],
+            "risk_flags": risk_flags,
+            "autonomy_delta": followup["autonomy_delta"],
+            "next_touch": record["next_touch"],
+        }
+    }))
+}
+
+fn handle_browser_spans(body: &str) -> Result<Value> {
+    let input: Value = serde_json::from_str(body).context("parse request body")?;
+    let text = input["text"].as_str().unwrap_or("").to_string();
+    if text.trim().is_empty() {
+        anyhow::bail!("text is required");
+    }
+    let spans = browser_span_candidates(&input, &text);
+    if spans.is_empty() {
+        anyhow::bail!("no valid browser span proposals");
+    }
+    finalize_spans(&text, spans)
+}
+
 // ---- the Slack sink (real post via webhook or bot token) ---------------------
 // The scrubbed record is what leaves — the clean thing, never the identifiers.
 
@@ -1086,6 +1206,19 @@ fn main() -> Result<()> {
                         .with_header(json_header),
                 );
             }
+            ("POST", "/api/browser-spans") => {
+                let mut body = String::new();
+                let _ = req.as_reader().read_to_string(&mut body);
+                let (status, payload) = match handle_browser_spans(&body) {
+                    Ok(v) => (200, v.to_string()),
+                    Err(e) => (422, json!({"error": format!("{e:#}")}).to_string()),
+                };
+                let _ = req.respond(
+                    tiny_http::Response::from_string(payload)
+                        .with_status_code(status)
+                        .with_header(json_header),
+                );
+            }
             ("POST", "/api/send") => {
                 let mut body = String::new();
                 let _ = req.as_reader().read_to_string(&mut body);
@@ -1327,6 +1460,50 @@ credentials:
                 .len(),
             240
         );
+    }
+
+    #[test]
+    fn browser_spans_finalize_when_contextual_and_gate_clean() {
+        let out = handle_browser_spans(
+            r#"{
+              "text":"Met with Maria Alvarez (CM-204815) Tuesday. Her daughter just started college. Committed to a morning walk.",
+              "spans":[
+                {"text":"Maria Alvarez","entity":"PERSON"},
+                {"text":"Tuesday","entity":"DATE"},
+                {"text":"daughter just started college","entity":"FAMILY_DETAIL"}
+              ]
+            }"#,
+        )
+        .unwrap();
+        assert_eq!(out["gate_pass"], true, "{out}");
+        assert_eq!(out["residual_count"], 0, "{out}");
+        assert_eq!(out["backend"], "browser-gpu", "{out}");
+        assert!(out["scrubbed_text"].as_str().unwrap().contains("[PERSON]"));
+        assert!(out["scrubbed_text"]
+            .as_str()
+            .unwrap()
+            .contains("[MEMBER_ID]"));
+        let layers: Vec<_> = out["redactions"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter_map(|r| r["layer"].as_str())
+            .collect();
+        assert!(layers.contains(&"browser-gpu"), "{out}");
+        assert!(layers.contains(&"rules"), "{out}");
+    }
+
+    #[test]
+    fn browser_spans_require_contextual_evidence() {
+        let blocked = handle_browser_spans(
+            r#"{
+              "text":"Met with Maria Alvarez (CM-204815) Tuesday.",
+              "spans":[{"text":"CM-204815","entity":"MEMBER_ID"}]
+            }"#,
+        )
+        .unwrap_err()
+        .to_string();
+        assert!(blocked.contains("contextual identifiers"), "{blocked}");
     }
 
     #[test]

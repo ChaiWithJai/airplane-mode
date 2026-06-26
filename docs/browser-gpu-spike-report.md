@@ -66,6 +66,9 @@ What we now have:
   `dtype: "q1"`, `onnx-community/Bonsai-1.7B-ONNX`.
 - Browser model telemetry reported back through `/api/client-capability` and
   visible in `/api/status`.
+- A verifier-gated browser span finalizer at `POST /api/browser-spans`.
+- Browser GPU mode now attempts:
+  `phone/browser q1 Bonsai -> span JSON -> /api/browser-spans -> gate -> record`.
 - A validated external Bonsai WebGPU demo:
   <https://huggingface.co/spaces/webml-community/bonsai-webgpu>.
 - Documentation that the HF demo uses `onnx-community/Bonsai-1.7B-ONNX` through
@@ -75,7 +78,8 @@ What we do not have yet:
 
 - A measured successful local browser generation on Jai's phone from our own
   web shell.
-- A structured browser span contract wired into the core response path.
+- A measured browser-span finalization from Jai's phone through
+  `/api/browser-spans`.
 - Offline model caching proof.
 - A measured phone-local scrub on our synthetic coaching note.
 
@@ -161,8 +165,14 @@ Implemented:
 - phone UI shows a Browser inference probe card
 - phone UI can select `Mac edge` or `Browser GPU`
 - selecting `Browser GPU` attempts a local q1 Bonsai span-generation probe with
-  a bounded timeout, then fails closed to Mac-edge Bonsai and displays that
-  truth in the scrub/record states
+  a bounded timeout, parses span JSON, and sends valid proposals to
+  `/api/browser-spans`
+- `/api/browser-spans` exact-matches browser spans against the note, unions them
+  with deterministic rules, requires contextual browser evidence, redacts,
+  verifier-gates, and returns the normal scrub response shape
+- if browser generation, JSON parsing, span finalization, or the gate fails, the
+  UI fails closed to Mac-edge Bonsai and displays that truth in the scrub/record
+  states
 - the app serves `/bonsai-worker.js`, a no-build module worker based on the HF
   Space's Transformers.js/WebGPU shape
 - model load/generation status is stored as sanitized browser telemetry, not raw
@@ -226,6 +236,23 @@ shell, the same endpoint flow was reprofiled:
 | `/api/send` | 0.94s, Slack accepted |
 | `/api/trajectory` | 0.04s, gate-clean trajectory stored as `local-000008` |
 
+After wiring `/api/browser-spans`, the server-side finalizer was verified with
+synthetic browser proposals:
+
+| Step | Result |
+| --- | --- |
+| `/api/browser-spans` | accepts exact contextual browser spans plus rules, returns `backend: browser-gpu`, `gate_pass: true`, `residual_count: 0` |
+| `/api/browser-spans` with only structured/rules-like spans | rejects with fallback-required error because contextual browser evidence is missing |
+
+The live browser-span contract was then profiled end to end with synthetic
+browser proposals:
+
+| Step | Result |
+| --- | --- |
+| `/api/browser-spans` | 2.50s, `backend: browser-gpu`, `gate_pass: true`, `residual_count: 0`, 4 redactions |
+| `/api/send` | 0.18s, Slack accepted |
+| `/api/trajectory` | 0.04s, gate-clean trajectory stored as `local-000009` |
+
 The scrub result caught:
 
 - `PERSON` via Bonsai
@@ -274,7 +301,7 @@ and has the verifier gate.
 
 Do not break it while building browser GPU.
 
-### Step 2: Replace Browser GPU Fallback With A Real Adapter
+### Step 2: Measure Browser Span Finalization On The Phone
 
 The selectable backend exists:
 
@@ -282,15 +309,14 @@ The selectable backend exists:
 Backend: Mac edge | Browser GPU spike
 ```
 
-The next build slice is to replace the probe/fallback boundary with a real
-browser span contract. Browser GPU mode already attempts to load and generate
-with Bonsai q1 in the browser. It still needs to:
+The browser span contract exists in the web shell. Browser GPU mode attempts to
+load and generate with Bonsai q1 in the browser, parse span JSON, and finalize
+through `/api/browser-spans`. It still needs to be measured on Jai's phone:
 
-- return validated raw span JSON proposals;
-- send only span proposals and scrubbed candidates through a new local
-  gate path;
-- keep the same `scrubbed_text`, `redactions`, `gate_pass`, `residual_count`,
-  `record` response shape.
+- successful phone-local model generation;
+- valid span JSON from that generation;
+- `/api/browser-spans` acceptance from the phone-driven UI;
+- Slack delivery from the resulting browser-span record.
 
 ### Step 3: Solve HTTPS For Local Phone WebGPU
 

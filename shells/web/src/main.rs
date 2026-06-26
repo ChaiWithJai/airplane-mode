@@ -25,6 +25,7 @@ const PROOF: &str = "shells/web/static/proof.html";
 const BONSAI_WORKER: &str = "shells/web/static/bonsai-worker.js";
 const BROWSER_VENDOR_DIR: &str = ".airplane/browser-vendor";
 const BROWSER_MODEL_DIR: &str = ".airplane/browser-models";
+const LOCAL_CA_CERT: &str = ".airplane/certs/airplane-local-ca.pem";
 const DEFAULT_ADDR: &str = "0.0.0.0:8099";
 const PASSES: u32 = 5;
 const SLACK_WEBHOOK_KEYCHAIN_REF: &str = "slack-webhook-url";
@@ -1384,6 +1385,11 @@ fn main() -> Result<()> {
         .unwrap();
         let wasm_header =
             tiny_http::Header::from_bytes(&b"Content-Type"[..], &b"application/wasm"[..]).unwrap();
+        let pem_header = tiny_http::Header::from_bytes(
+            &b"Content-Type"[..],
+            &b"application/x-pem-file"[..],
+        )
+        .unwrap();
 
         match (method.as_str(), path.as_str()) {
             ("GET", "/") => {
@@ -1406,6 +1412,24 @@ fn main() -> Result<()> {
                     .unwrap_or_else(|_| "<h1>proof.html missing</h1>".into());
                 let _ =
                     req.respond(tiny_http::Response::from_string(html).with_header(html_header));
+            }
+            (method @ ("GET" | "HEAD"), "/airplane-local-ca.pem") => {
+                let path = repo_path(LOCAL_CA_CERT);
+                match std::fs::read_to_string(&path) {
+                    Ok(pem) => {
+                        let body = if method == "HEAD" { String::new() } else { pem };
+                        let _ =
+                            req.respond(tiny_http::Response::from_string(body).with_header(pem_header));
+                    }
+                    Err(_) => {
+                        let _ = req.respond(
+                            tiny_http::Response::from_string(
+                                "local CA not generated; run ./run.sh https-proxy first",
+                            )
+                            .with_status_code(404),
+                        );
+                    }
+                }
             }
             ("GET", "/bonsai-worker.js") => {
                 observe_browser_request(&req, "GET", "/bonsai-worker.js", "worker", None);

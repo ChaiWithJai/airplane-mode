@@ -154,6 +154,11 @@
   .businessList div{border-left:3px solid #bfdcc6;padding-left:8px}
   .captureMeta{display:flex;align-items:center;justify-content:space-between;gap:8px;font:700 10px var(--mono);color:#8a8273}
   .disclosureBody .backendChoice,.disclosureBody .capPanel{margin:10px 10px 0}
+  .secureCallout{display:none;border:1.5px solid #e3c98a;background:#fff8e8;border-radius:8px;padding:10px 11px}
+  .secureCallout b{display:block;font:800 10px var(--mono);letter-spacing:.04em;color:#8a5a0f;text-transform:uppercase}
+  .secureCallout span{display:block;font:600 12px/1.4 var(--sans);color:#4f493f;margin-top:4px}
+  .secureCallout a{display:block;margin-top:8px;font:800 10px/1.35 var(--mono);color:#245b8f;overflow-wrap:anywhere;text-decoration:none}
+  .secureCallout small{display:block;margin-top:7px;font:700 10px/1.35 var(--sans);color:#736c5d}
   .btn.disabled{background:#d9d0bd;color:#8a8273;cursor:default;box-shadow:none}
   .mono{font-family:var(--mono)}
   .grow{flex:1;min-height:0}
@@ -292,6 +297,30 @@ function businessDisclosureHtml(){
   </details>`;
 }
 
+function securePhoneUrl(){
+  const n = S.status && S.status.network ? S.status.network : {};
+  const httpsPort = n.https_port || '8443';
+  const host = location.hostname;
+  if(host && host !== 'localhost' && host !== '127.0.0.1') return `https://${host}:${httpsPort}/`;
+  const ips = Array.isArray(n.ips) ? n.ips : [];
+  return ips.length ? `https://${ips[0]}:${httpsPort}/` : `https://${location.hostname || '127.0.0.1'}:${httpsPort}/`;
+}
+
+function localCaUrl(){
+  return `${location.protocol}//${location.host}/airplane-local-ca.pem`;
+}
+
+function secureContextCalloutHtml(){
+  const needsHttps = S.backend === 'browser-gpu' && !window.isSecureContext && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1';
+  const url = securePhoneUrl();
+  return `<div id="secureCallout" class="secureCallout" style="display:${needsHttps?'block':'none'}">
+    <b>Secure phone URL required</b>
+    <span>Browser GPU needs HTTPS on a phone. Open the secure local URL before the demo so WebGPU can be attempted.</span>
+    <a href="${esc(url)}">${esc(url)}</a>
+    <small>If iOS warns about trust, install the local CA first: <a href="${esc(localCaUrl())}">airplane-local-ca.pem</a></small>
+  </div>`;
+}
+
 function pathDisclosureHtml(){
   return `<details class="disclosure">
     <summary>Path and capability</summary>
@@ -333,6 +362,7 @@ const screens = {
        </button>
        <button data-act="sample" class="sampleBtn">Use sample</button>
      </div>
+     ${secureContextCalloutHtml()}
      <textarea id="noteInput" class="note" placeholder="Session note appears here…" oninput="handleNoteInput(this.value)">${esc(S.note)}</textarea>
      <div class="captureMeta">
        <span id="captureMsg" style="color:${S.speechMsg?'var(--amber)':'#8a8273'}">${esc(S.speechMsg||'edge capture · verifier gated')}</span>
@@ -761,6 +791,7 @@ function selectBackend(name){
   S.backendNote = '';
   saveDraft();
   render();
+  updateSecureContextCallout();
 }
 
 function browserModelStatus(status, detail, extra={}){
@@ -905,6 +936,35 @@ function updateCaptureControls(){
   }
 }
 
+function updateDictationControl(){
+  const btn = $screen.querySelector('[data-act="dictate"]');
+  if(!btn) return;
+  const canSpeech = !!speechRecognitionCtor();
+  const label = S.listening ? 'Listening...' : (canSpeech ? 'Start dictation' : 'Use keyboard mic');
+  btn.classList.toggle('listening', !!S.listening);
+  const orb = btn.querySelector('.micorb');
+  if(orb) orb.textContent = S.listening ? '■' : '🎙';
+  const spans = btn.querySelectorAll('span');
+  if(spans.length > 1) spans[1].textContent = label;
+}
+
+function updateSecureContextCallout(){
+  const box = document.getElementById('secureCallout');
+  if(!box) return;
+  const needsHttps = S.backend === 'browser-gpu' && !window.isSecureContext && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1';
+  box.style.display = needsHttps ? 'block' : 'none';
+  const link = box.querySelector('a');
+  if(link){
+    const url = securePhoneUrl();
+    link.href = url;
+    link.textContent = url;
+  }
+  const links = box.querySelectorAll('a');
+  if(links.length > 1){
+    links[1].href = localCaUrl();
+  }
+}
+
 function handleNoteInput(value){
   S.note = value;
   saveDraft();
@@ -934,12 +994,19 @@ function setCaptureNote(text, msg){
 }
 
 function toggleDictation(){
-  if(S.listening && recognizer){ try{ recognizer.stop(); }catch(_){} S.listening=false; S.speechMsg='dictation stopped'; render(); return; }
-  focusNote();
+  if(S.listening && recognizer){
+    try{ recognizer.stop(); }catch(_){}
+    S.listening=false;
+    S.speechMsg='dictation stopped';
+    updateDictationControl();
+    updateCaptureControls();
+    saveDraft();
+    return;
+  }
   const SpeechRecognition = speechRecognitionCtor();
   if(!SpeechRecognition){
     S.speechMsg='keyboard mic ready';
-    render();
+    updateCaptureControls();
     setTimeout(focusNote,0);
     return;
   }
@@ -949,7 +1016,13 @@ function toggleDictation(){
   recognizer.lang = 'en-US';
   let base = S.note.trim();
   let finalTranscript = '';
-  recognizer.onstart = ()=>{ S.listening=true; S.speechMsg='capturing voice'; render(); };
+  recognizer.onstart = ()=>{
+    S.listening=true;
+    S.speechMsg='capturing voice';
+    updateDictationControl();
+    updateCaptureControls();
+    saveDraft();
+  };
   recognizer.onresult = (event)=>{
     let finalText = '', interim = '';
     for(let i=0;i<event.results.length;i++){
@@ -960,14 +1033,41 @@ function toggleDictation(){
     finalTranscript = finalText;
     setCaptureNote([base, finalTranscript, interim].filter(Boolean).join(' '), 'capturing voice');
   };
-  recognizer.onerror = ()=>{ S.listening=false; S.speechMsg='keyboard mic ready'; render(); setTimeout(focusNote,0); };
-  recognizer.onend = ()=>{ S.listening=false; if(!S.speechMsg) S.speechMsg='dictation captured'; render(); };
-  try{ recognizer.start(); }catch(_){ S.speechMsg='keyboard mic ready'; render(); setTimeout(focusNote,0); }
+  recognizer.onerror = ()=>{
+    S.listening=false;
+    S.speechMsg='keyboard mic ready';
+    updateDictationControl();
+    updateCaptureControls();
+    saveDraft();
+    setTimeout(focusNote,0);
+  };
+  recognizer.onend = ()=>{
+    S.listening=false;
+    S.speechMsg=S.note.trim() ? 'dictation captured' : 'keyboard mic ready';
+    updateDictationControl();
+    updateCaptureControls();
+    saveDraft();
+  };
+  try{ recognizer.start(); }catch(_){
+    S.speechMsg='keyboard mic ready';
+    updateDictationControl();
+    updateCaptureControls();
+    saveDraft();
+    setTimeout(focusNote,0);
+  }
 }
 
 async function doScrub(){
   S.result=null; S.error=null;
   if(S.backend === 'browser-gpu'){
+    if(!window.isSecureContext && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1'){
+      S.error = `Browser GPU needs the secure phone URL: ${securePhoneUrl()}`;
+      S.backendNote = S.error;
+      updateSecureContextCallout();
+      saveDraft();
+      if(S.screen==='scrubbing') render();
+      return;
+    }
     S.backendNote = 'Browser GPU selected: attempting local Bonsai q1 span generation; Mac-edge verifier remains the final egress gate.';
     setJob('scrub','running','browser GPU span probe');
     const probe = await runBrowserGpuSpanProbe(S.note);
@@ -1188,6 +1288,7 @@ async function refreshStatus(){
       if(data.client_capability) S.capability=data.client_capability;
       replayPendingSend('edge status restored');
       if(S.screen==='capturing' || S.job || S.sendQueued) render();
+      updateSecureContextCallout();
     }
   }catch(_){}
 }

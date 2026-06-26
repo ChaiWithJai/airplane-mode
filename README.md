@@ -173,6 +173,10 @@ To watch for a real iPhone consuming the app/runtime/model routes, run:
 AIRPLANE_WEB_URL=https://<mac-lan-ip>:8443 ./run.sh phone-request-observe
 ```
 
+You can also open `https://<mac-lan-ip>:8443/proof` on the laptop during a demo.
+It refreshes `/api/status` and shows Slack/model health, active phone capability,
+and recent PHI-free browser requests.
+
 If you need HTTPS to test browser GPU behavior on a phone, do not tunnel the full
 scrub app through Cloudflare. Use local HTTPS for the real app:
 

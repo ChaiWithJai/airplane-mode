@@ -399,6 +399,11 @@ the probe completes. That avoids a false negative where an iPhone loads the page
 but Safari stalls or rejects `navigator.gpu.requestAdapter()` before
 `/api/client-capability` receives anything.
 
+For live demos, open `/proof` on the laptop. It is a PHI-free operator view over
+`/api/status`: Slack health, local model health, latest phone capability, and
+recent browser-surface requests. It is deliberately separate from the scrub flow
+so proof gathering cannot capture note text.
+
 ## Optimal Path From Here
 
 ### Step 1: Keep The Current Demo Stable

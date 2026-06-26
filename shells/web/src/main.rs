@@ -21,6 +21,7 @@ use std::time::{Duration, Instant};
 const DEFAULT_PACK_DIR: &str = "packs/coach-session";
 const INDEX: &str = "shells/web/static/index.html";
 const GPU_PROBE: &str = "shells/web/static/gpu.html";
+const PROOF: &str = "shells/web/static/proof.html";
 const BONSAI_WORKER: &str = "shells/web/static/bonsai-worker.js";
 const BROWSER_VENDOR_DIR: &str = ".airplane/browser-vendor";
 const BROWSER_MODEL_DIR: &str = ".airplane/browser-models";
@@ -1387,6 +1388,13 @@ fn main() -> Result<()> {
                 observe_browser_request(&req, "GET", "/gpu", "gpu-probe", None);
                 let html = std::fs::read_to_string(GPU_PROBE)
                     .unwrap_or_else(|_| "<h1>gpu.html missing</h1>".into());
+                let _ =
+                    req.respond(tiny_http::Response::from_string(html).with_header(html_header));
+            }
+            ("GET", "/proof") => {
+                observe_browser_request(&req, "GET", "/proof", "proof", None);
+                let html = std::fs::read_to_string(PROOF)
+                    .unwrap_or_else(|_| "<h1>proof.html missing</h1>".into());
                 let _ =
                     req.respond(tiny_http::Response::from_string(html).with_header(html_header));
             }

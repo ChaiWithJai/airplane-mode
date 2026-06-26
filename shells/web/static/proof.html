@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Airplane Mode Proof</title>
+<style>
+  :root{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#242019;background:#fbfaf6}
+  body{margin:0;padding:24px;max-width:980px}
+  h1{font-size:24px;margin:0 0 6px}
+  p{margin:0 0 18px;color:#6d6558;line-height:1.45}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin:18px 0}
+  .card{border:1px solid #ded6c8;background:#fff;border-radius:8px;padding:14px}
+  .label{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:#877b68;font-weight:800}
+  .value{font-size:18px;font-weight:800;margin-top:5px}
+  .ok{color:#28784a}.warn{color:#a16600}.bad{color:#aa352b}
+  pre{white-space:pre-wrap;overflow:auto;background:#171510;color:#f4efe3;border-radius:8px;padding:13px;font-size:12px;line-height:1.45}
+  table{width:100%;border-collapse:collapse;background:#fff;border:1px solid #ded6c8;border-radius:8px;overflow:hidden}
+  th,td{text-align:left;border-bottom:1px solid #eee7dc;padding:9px 10px;font-size:12px;vertical-align:top}
+  th{font-size:11px;text-transform:uppercase;color:#756b5d;background:#f4efe5}
+  a{color:#245f8f;font-weight:700}
+</style>
+<body>
+  <h1>Airplane Mode Proof</h1>
+  <p>PHI-free status for the phone/WebGPU demo. This page records browser surface telemetry only: no notes, no records, no Slack payloads.</p>
+
+  <div class="grid">
+    <div class="card"><div class="label">Slack</div><div id="slack" class="value warn">checking</div></div>
+    <div class="card"><div class="label">Model server</div><div id="model" class="value warn">checking</div></div>
+    <div class="card"><div class="label">Phone capability</div><div id="capability" class="value warn">not observed</div></div>
+    <div class="card"><div class="label">iPhone requests</div><div id="requests" class="value warn">0</div></div>
+  </div>
+
+  <div class="card">
+    <div class="label">Open on phone</div>
+    <pre id="phoneUrl"></pre>
+  </div>
+
+  <div class="card">
+    <div class="label">Observer commands</div>
+    <pre id="commands"></pre>
+  </div>
+
+  <h2>Recent Browser Requests</h2>
+  <table>
+    <thead><tr><th>Client</th><th>Route</th><th>Method</th><th>Path</th><th>Range</th><th>Bytes</th><th>User agent</th></tr></thead>
+    <tbody id="rows"><tr><td colspan="7">Checking...</td></tr></tbody>
+  </table>
+
+  <h2>Raw Status</h2>
+  <pre id="raw"></pre>
+
+<script>
+const $ = id => document.getElementById(id);
+function cls(el, ok, warn=false){ el.className = 'value ' + (ok ? 'ok' : (warn ? 'warn' : 'bad')); }
+function esc(s){ return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function phoneOrigin(){
+  const host = location.host;
+  return `${location.protocol}//${host}`;
+}
+function commandText(){
+  const origin = phoneOrigin();
+  return `AIRPLANE_WEB_URL=${origin} ./run.sh phone-observe\nAIRPLANE_WEB_URL=${origin} ./run.sh phone-request-observe\nAIRPLANE_WEB_URL=${origin} ./run.sh browser-span-smoke`;
+}
+async function refresh(){
+  $('phoneUrl').textContent = phoneOrigin() + '/';
+  $('commands').textContent = commandText();
+  const res = await fetch('/api/status', {cache:'no-store'});
+  const data = await res.json();
+  $('raw').textContent = JSON.stringify(data, null, 2);
+
+  const slackOk = !!data.slack?.configured;
+  $('slack').textContent = slackOk ? `${data.slack.route} ${data.slack.channel}` : 'preview';
+  cls($('slack'), slackOk, true);
+
+  const modelOk = !!data.model?.reachable;
+  $('model').textContent = modelOk ? 'reachable' : 'offline';
+  cls($('model'), modelOk);
+
+  const cap = data.client_capability;
+  const capOk = !!cap && !String(cap.observed_from||'').startsWith('127.');
+  $('capability').textContent = capOk ? `${cap.platform || 'phone'} ${cap.webgpu ? 'WebGPU' : 'no WebGPU'}` : 'not observed';
+  cls($('capability'), capOk, true);
+
+  const iphone = (data.browser_requests||[]).filter(r=>r.looks_like_iphone && !String(r.client||'').startsWith('127.'));
+  $('requests').textContent = String(iphone.length);
+  cls($('requests'), iphone.length > 0, true);
+
+  const rows = (data.browser_requests||[]).slice(-16).reverse();
+  $('rows').innerHTML = rows.length ? rows.map(r=>`<tr>
+    <td>${esc(r.client)}</td><td>${esc(r.route)}</td><td>${esc(r.method)}</td><td>${esc(r.path)}</td>
+    <td>${esc(r.range)}</td><td>${esc(r.artifact_bytes)}</td><td>${esc(r.user_agent)}</td>
+  </tr>`).join('') : '<tr><td colspan="7">No browser requests observed on this server process.</td></tr>';
+}
+refresh().catch(err=>{$('raw').textContent=String(err)});
+setInterval(()=>refresh().catch(()=>{}), 2000);
+</script>
+</body>
+</html>

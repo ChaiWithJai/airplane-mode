@@ -277,8 +277,16 @@ is absent. Vendor it for the sovereign demo path:
 ./run.sh vendor-browser-runtime
 ```
 
-This writes `.airplane/browser-vendor/transformers.js` and keeps the artifact out
-of git. Raw notes do not go to the CDN in either mode, but regulated end-user
+This writes `.airplane/browser-vendor/transformers.js` plus the package's shipped
+browser sidecar files and keeps those artifacts out of git. The current verified
+local browser runtime files are:
+
+| Local route | Size |
+| --- | --- |
+| `/vendor/transformers.js` | 431,974 bytes |
+| `/vendor/ort-wasm-simd-threaded.jsep.mjs` | 46,490 bytes |
+
+Raw notes do not go to the CDN in either mode, but regulated end-user
 deployments should self-host or vendor that runtime behind the same first-party
 network.
 

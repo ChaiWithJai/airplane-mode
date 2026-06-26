@@ -22,7 +22,7 @@ const DEFAULT_PACK_DIR: &str = "packs/coach-session";
 const INDEX: &str = "shells/web/static/index.html";
 const GPU_PROBE: &str = "shells/web/static/gpu.html";
 const BONSAI_WORKER: &str = "shells/web/static/bonsai-worker.js";
-const BROWSER_VENDOR_TRANSFORMERS: &str = ".airplane/browser-vendor/transformers.js";
+const BROWSER_VENDOR_DIR: &str = ".airplane/browser-vendor";
 const DEFAULT_ADDR: &str = "0.0.0.0:8099";
 const PASSES: u32 = 5;
 const SLACK_WEBHOOK_KEYCHAIN_REF: &str = "slack-webhook-url";
@@ -1150,6 +1150,8 @@ fn main() -> Result<()> {
             &b"text/javascript; charset=utf-8"[..],
         )
         .unwrap();
+        let wasm_header =
+            tiny_http::Header::from_bytes(&b"Content-Type"[..], &b"application/wasm"[..]).unwrap();
 
         match (method.as_str(), path.as_str()) {
             ("GET", "/") => {
@@ -1170,11 +1172,25 @@ fn main() -> Result<()> {
                 });
                 let _ = req.respond(tiny_http::Response::from_string(js).with_header(js_header));
             }
-            ("GET", "/vendor/transformers.js") => {
-                match std::fs::read_to_string(BROWSER_VENDOR_TRANSFORMERS) {
-                    Ok(js) => {
-                        let _ = req
-                            .respond(tiny_http::Response::from_string(js).with_header(js_header));
+            ("GET", path) if path.starts_with("/vendor/") => {
+                let name = path.trim_start_matches("/vendor/");
+                if name.contains('/') || name.contains("..") || name.is_empty() {
+                    let _ = req.respond(
+                        tiny_http::Response::from_string("invalid vendor path")
+                            .with_status_code(400),
+                    );
+                    continue;
+                }
+                let vendor_path = repo_path(BROWSER_VENDOR_DIR).join(name);
+                match std::fs::read(&vendor_path) {
+                    Ok(bytes) => {
+                        let header = if name.ends_with(".wasm") {
+                            wasm_header
+                        } else {
+                            js_header
+                        };
+                        let _ =
+                            req.respond(tiny_http::Response::from_data(bytes).with_header(header));
                     }
                     Err(_) => {
                         let _ = req.respond(

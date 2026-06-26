@@ -13,6 +13,17 @@ The narrative anchor is Jai's intro note:
 who is building this, why healthcare is the first case study, and why the demo is
 framed as Bonsai ecosystem work rather than a one-off app.
 
+## Demo Video
+
+Watch the publish-ready walkthrough:
+[Loom: Bonsai PHI Scrubber healthcare hackathon demo](https://www.loom.com/share/bf03c0fcc09d40bd811af794d7b7481c).
+
+Use it with the transcript and claim guardrails in
+[`docs/demo/publish-orientation.md`](docs/demo/publish-orientation.md). The video
+shows the desired product story; the repo docs keep the implementation boundary
+precise: the current web demo uses a phone browser and first-party laptop edge,
+while Browser GPU/native iPhone inference remains the benchmark path to extend.
+
 ## What This Demo Proves
 
 The core pattern is simple:
@@ -471,6 +482,7 @@ recover with Git when a builder has a real use case.
 | `docs/hipaa-cloudflare-boundary.md` | Why Cloudflare HTTPS helps capability probes but is not HIPAA compliance. |
 | `docs/sovereign-network-pattern.md` | First-party phone-to-edge network pattern for adopters. |
 | `docs/contracts/` | Shared JSON contract fixtures for shell/backend interoperability. |
+| `docs/demo/publish-orientation.md` | Loom link, transcript orientation, call to action, and publish-safe claims. |
 | `docs/demo/onboarding.md` | Phone demo and Slack runbook. |
 | `docs/demo/fsm-service-map.md` | Current service map, screen FSM, addressable state, and service failure meanings. |
 | `docs/demo/stack-adoption-proof.md` | Source benchmark, stack choices, runtime placement, and adoption proof. |

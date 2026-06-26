@@ -20,10 +20,12 @@ use std::time::{Duration, Instant};
 
 const DEFAULT_PACK_DIR: &str = "packs/coach-session";
 const INDEX: &str = "shells/web/static/index.html";
+const GPU_PROBE: &str = "shells/web/static/gpu.html";
 const DEFAULT_ADDR: &str = "0.0.0.0:8099";
 const PASSES: u32 = 5;
 const SLACK_WEBHOOK_KEYCHAIN_REF: &str = "slack-webhook-url";
 static ACKED_SEND_IDS: OnceLock<Mutex<HashSet<String>>> = OnceLock::new();
+static CLIENT_CAPABILITY: OnceLock<Mutex<Option<Value>>> = OnceLock::new();
 
 fn repo_path(rel: &str) -> PathBuf {
     let direct = PathBuf::from(rel);
@@ -115,7 +117,7 @@ impl InferenceProvider for LlamaServer {
     }
 }
 
-// ---- structurer (runs on de-identified text only) ----------------------------
+// ---- structurer (runs on scrubbed text only) ---------------------------------
 
 fn pseudonym(redactions: &[Span]) -> String {
     use std::hash::{Hash, Hasher};
@@ -210,7 +212,7 @@ fn sanitize_record(rec: &Value, scrubbed: &str) -> Value {
         .into_iter()
         .filter_map(|c| {
             let t = c["text"].as_str().unwrap_or("");
-            // grounded: at least one content word must appear in the de-identified note,
+            // grounded: at least one content word must appear in the scrubbed note,
             // so the structurer can't invent commitments that weren't there.
             let grounded = t
                 .split_whitespace()
@@ -351,7 +353,7 @@ fn handle_scrub(body: &str) -> Result<Value> {
 }
 
 // ---- the Slack sink (real post via webhook or bot token) ---------------------
-// The DE-IDENTIFIED record is what leaves — the clean thing, never the identifiers.
+// The scrubbed record is what leaves — the clean thing, never the identifiers.
 
 #[derive(Debug, Deserialize)]
 struct SinkConfig {
@@ -463,6 +465,64 @@ fn model_status() -> Value {
     })
 }
 
+fn client_capability_store() -> &'static Mutex<Option<Value>> {
+    CLIENT_CAPABILITY.get_or_init(|| Mutex::new(None))
+}
+
+fn sanitize_client_capability(input: &Value) -> Value {
+    let truncate = |key: &str, limit: usize| -> String {
+        input[key]
+            .as_str()
+            .unwrap_or("")
+            .chars()
+            .take(limit)
+            .collect::<String>()
+    };
+    json!({
+        "reported_at": chrono_like_now(),
+        "user_agent": truncate("user_agent", 240),
+        "platform": truncate("platform", 80),
+        "language": truncate("language", 32),
+        "webgpu": input["webgpu"].as_bool().unwrap_or(false),
+        "webgl": input["webgl"].as_bool().unwrap_or(false),
+        "webgl2": input["webgl2"].as_bool().unwrap_or(false),
+        "webgpu_error": truncate("webgpu_error", 160),
+        "hardware_concurrency": input["hardware_concurrency"].as_u64().unwrap_or(0),
+        "device_memory": input["device_memory"].as_f64().unwrap_or(0.0),
+        "screen": {
+            "width": input["screen"]["width"].as_u64().unwrap_or(0),
+            "height": input["screen"]["height"].as_u64().unwrap_or(0),
+            "dpr": input["screen"]["dpr"].as_f64().unwrap_or(0.0)
+        }
+    })
+}
+
+fn chrono_like_now() -> String {
+    // Keep dependencies small; this is diagnostic telemetry, not an audit timestamp.
+    format!("{:?}", std::time::SystemTime::now())
+}
+
+fn handle_client_capability(body: &str) -> Value {
+    let input: Value = match serde_json::from_str(body) {
+        Ok(v) => v,
+        Err(e) => return json!({"ok": false, "error": format!("parse request body: {e}")}),
+    };
+    let payload = sanitize_client_capability(&input);
+    eprintln!("client-capability: {payload}");
+    if let Ok(mut slot) = client_capability_store().lock() {
+        *slot = Some(payload.clone());
+    }
+    json!({"ok": true, "capability": payload})
+}
+
+fn latest_client_capability() -> Value {
+    client_capability_store()
+        .lock()
+        .ok()
+        .and_then(|slot| slot.clone())
+        .unwrap_or_else(|| json!(null))
+}
+
 fn slack_blocks(record: &Value) -> Value {
     let pseud = record["client_pseudonym"].as_str().unwrap_or("CLIENT");
     let themes = record["themes"]
@@ -507,7 +567,7 @@ fn slack_blocks(record: &Value) -> Value {
             {"type":"mrkdwn","text":format!("*Risk flags*\n{risk}")},
         ]},
         {"type":"context","elements":[{"type":"mrkdwn",
-            "text":"✓ de-identified · gate-clean · autonomy signals only · no name, no member ID"}]}
+            "text":"✓ scrubbed · gate-clean · autonomy signals only · no name, no member ID"}]}
     ])
 }
 
@@ -551,7 +611,7 @@ fn slack_outbound_text(record: &Value) -> String {
         parts.push(format!("Risk flags: {}", risks.join(" · ")));
     }
     parts.push(
-        "de-identified · gate-clean · autonomy signals only · no name, no member ID".to_string(),
+        "scrubbed · gate-clean · autonomy signals only · no name, no member ID".to_string(),
     );
     parts.join("\n")
 }
@@ -963,14 +1023,25 @@ fn main() -> Result<()> {
                 let _ =
                     req.respond(tiny_http::Response::from_string(html).with_header(html_header));
             }
+            ("GET", "/gpu") => {
+                let html = std::fs::read_to_string(GPU_PROBE)
+                    .unwrap_or_else(|_| "<h1>gpu.html missing</h1>".into());
+                let _ =
+                    req.respond(tiny_http::Response::from_string(html).with_header(html_header));
+            }
             ("GET", "/api/health") => {
                 let _ = req.respond(
                     tiny_http::Response::from_string(r#"{"ok":true}"#).with_header(json_header),
                 );
             }
             ("GET", "/api/status") => {
-                let payload = json!({"ok": true, "slack": slack_status(), "model": model_status()})
-                    .to_string();
+                let payload = json!({
+                    "ok": true,
+                    "slack": slack_status(),
+                    "model": model_status(),
+                    "client_capability": latest_client_capability()
+                })
+                .to_string();
                 let _ =
                     req.respond(tiny_http::Response::from_string(payload).with_header(json_header));
             }
@@ -999,6 +1070,13 @@ fn main() -> Result<()> {
                 let mut body = String::new();
                 let _ = req.as_reader().read_to_string(&mut body);
                 let payload = handle_send(&body).to_string();
+                let _ =
+                    req.respond(tiny_http::Response::from_string(payload).with_header(json_header));
+            }
+            ("POST", "/api/client-capability") => {
+                let mut body = String::new();
+                let _ = req.as_reader().read_to_string(&mut body);
+                let payload = handle_client_capability(&body).to_string();
                 let _ =
                     req.respond(tiny_http::Response::from_string(payload).with_header(json_header));
             }
@@ -1188,6 +1266,27 @@ credentials:
         let pack = Pack::load(&pack_path()).unwrap();
         let decision = VerifierGate::new(&pack.rules).check(&slack_outbound_text(&record));
         assert!(matches!(decision, GateDecision::Pass), "{decision:?}");
+    }
+
+    #[test]
+    fn client_capability_report_is_sanitized_for_status() {
+        let raw = json!({
+            "user_agent": "x".repeat(400),
+            "platform": "iPhone",
+            "language": "en-US",
+            "webgpu": true,
+            "webgl": true,
+            "webgl2": true,
+            "hardware_concurrency": 6,
+            "device_memory": 4,
+            "screen": {"width": 390, "height": 844, "dpr": 3}
+        });
+        let out = sanitize_client_capability(&raw);
+        assert_eq!(out["webgpu"], true);
+        assert_eq!(out["webgl2"], true);
+        assert_eq!(out["platform"], "iPhone");
+        assert_eq!(out["screen"]["width"], 390);
+        assert_eq!(out["user_agent"].as_str().unwrap().len(), 240);
     }
 
     #[test]

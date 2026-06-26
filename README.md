@@ -135,6 +135,11 @@ In the UI:
 The phone is a touchscreen for this web build. The laptop is the current edge
 node. The native iPhone shell is tracked separately.
 
+The intended network shape is first-party and sovereign: phone to your own
+laptop, hotspot, LAN, or IT-managed VPN. Do not use a third-party public tunnel
+for the scrub workflow. See
+[`docs/sovereign-network-pattern.md`](docs/sovereign-network-pattern.md).
+
 To verify the simulator-safe iOS scaffold and backend selector, run:
 
 ```bash
@@ -144,9 +149,29 @@ To verify the simulator-safe iOS scaffold and backend selector, run:
 That command runs SwiftPM tests/build for the mock `mlx-swift` and edge-HTTP
 backend modes. It does not prove real iPhone 11/A13 inference.
 
-For the next real phone path, compare native MLX Swift with browser WebGPU in
-[`docs/webgpu-vs-mlx.md`](docs/webgpu-vs-mlx.md). The recommendation is to
-measure both instead of assuming the native path wins.
+For the next real phone path, start with the browser GPU route. The ecosystem has
+already proven a Bonsai WebGPU demo on Hugging Face, so the next dense move is to
+wrap that runtime path in this repo's verifier gate. See
+[`docs/webgpu-vs-mlx.md`](docs/webgpu-vs-mlx.md) and
+[`docs/browser-gpu-spike-report.md`](docs/browser-gpu-spike-report.md).
+
+If you need HTTPS to test browser GPU behavior on a phone, do not tunnel the full
+scrub app through Cloudflare. Use local HTTPS for the real app:
+
+```bash
+./run.sh web
+./run.sh https-proxy
+```
+
+If you only need a non-PHI capability page, run the capability-only probe:
+
+```bash
+./run.sh gpu-probe
+```
+
+That probe does not accept notes or post to Slack. A public tunnel is acceptable
+only for that capability-only surface, not for the scrub workflow. See
+[`docs/hipaa-cloudflare-boundary.md`](docs/hipaa-cloudflare-boundary.md).
 
 ## Wire Slack For A Real Post
 
@@ -361,6 +386,9 @@ real iPhone 11 hardware proof.
 | `packs/coach-session/` | Reference pack and synthetic eval set. |
 | `docs/model-setup.md` | Model download/runtime details. |
 | `docs/webgpu-vs-mlx.md` | Phone-path comparison: native MLX Swift vs browser WebGPU. |
+| `docs/browser-gpu-spike-report.md` | Spike report narrowing the phone path to browser GPU first. |
+| `docs/hipaa-cloudflare-boundary.md` | Why Cloudflare HTTPS helps capability probes but is not HIPAA compliance. |
+| `docs/sovereign-network-pattern.md` | First-party phone-to-edge network pattern for adopters. |
 | `docs/contracts/` | Shared JSON contract fixtures for shell/backend interoperability. |
 | `docs/demo/onboarding.md` | Phone demo and Slack runbook. |
 | `docs/demo/reference-architecture.md` | CNCF-style adopter/builder reference architecture. |

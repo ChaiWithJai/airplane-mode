@@ -66,6 +66,11 @@ ipconfig getifaddr en0
 ```
 Then use `http://<that-ip>:8099`.
 
+Use a first-party network: same Wi-Fi, Personal Hotspot, clinic LAN, or
+IT-managed VPN. Do not use a public tunnel for the scrub workflow. The demo
+works because the phone talks to your own edge node; only the scrubbed Slack
+record is allowed to leave after the verifier gate.
+
 ### Primary: same Wi-Fi
 
 1. Put the phone on the **same Wi-Fi** as the Mac.
@@ -88,6 +93,10 @@ The fix is to put both devices on the iPhone's own local network:
 4. On the phone, open `http://172.20.10.x:8099`.
 
 **No server restart needed** — `airplane-web` already listens on all interfaces. All traffic stays on the phone's own local network (no internet), which preserves the demo's "stays local" story.
+
+For a managed organization, replace the hotspot with the organization's private
+network/VPN and replace the local development certificate with an IT-managed
+certificate. The architecture is the same.
 
 ## Run the demo (8 steps)
 

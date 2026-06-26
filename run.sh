@@ -14,6 +14,8 @@ case "$verb" in
   gates)  build; "$BIN" gates; ./scripts/smoke-ethical-gate-fixtures.sh --bin "$BIN" ;;
   gates-fast) build; "$BIN" gates-fast; ./scripts/smoke-ethical-gate-fixtures.sh --bin "$BIN" ;;
   web)    cargo build -q --bin airplane-web; target/debug/airplane-web ;;
+  gpu-probe) shift; ./scripts/serve-gpu-probe.sh "$@" ;;
+  https-proxy) shift; ./scripts/serve-local-https-proxy.sh "$@" ;;
   mcp)    cargo build -q --bin airplane-mcp; target/debug/airplane-mcp ;;
   ios-sim) (cd shells/ios && swift test && swift build) ;;
   slack-smoke) shift; ./scripts/smoke-slack-sink.sh "$@" ;;
@@ -25,6 +27,8 @@ Airplane Mode — run.sh   (on-device PHI scrubber; CLI shell over airplane-core
   ./run.sh gates           run the harness gates
   ./run.sh gates-fast      run no-model policy/provenance gates for fast iteration
   ./run.sh web             serve the Beat 1 demo UI (default http://localhost:8099, LAN-accessible)
+  ./run.sh gpu-probe       serve capability-only GPU probe (safe to tunnel; no notes)
+  ./run.sh https-proxy     serve local HTTPS proxy for phone secure-context testing
   ./run.sh mcp             start the stdio MCP shell (agent-callable scrub tool)
   ./run.sh ios-sim         verify the simulator-safe iOS shell scaffold (no hardware proof)
   ./run.sh slack-smoke     post one synthetic gate-clean record through the Slack sink

@@ -115,6 +115,14 @@
   .jobbar b{font:800 10px var(--mono);color:var(--green);letter-spacing:0}
   .jobbar.fail b{color:var(--red)}
   .jobbar.run b{color:var(--amber)}
+  .capPanel{margin-top:10px;border:1px solid #dce2da;background:#ffffff;border-radius:12px;padding:11px 12px}
+  .capPanel b{display:block;font:800 10px var(--mono);letter-spacing:.04em;color:#a39a86;text-transform:uppercase}
+  .capGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:9px}
+  .capCell{border:1px solid #e4e7e1;border-radius:9px;padding:7px 5px;text-align:center;background:#fbfcfa;min-width:0}
+  .capCell span{display:block;font:800 9px var(--mono);color:#8a8273;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .capCell strong{display:block;font:800 13px var(--mono);margin-top:3px;color:var(--ink)}
+  .capLinks{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}
+  .capLinks a{font:800 9px var(--mono);text-decoration:none;color:#245b8f;background:#edf4fb;border:1px solid #c9d9e7;border-radius:999px;padding:5px 8px}
   .sampleBtn{font:700 12px var(--sans);color:var(--gold);background:#f6ecd6;border:1px solid #e3c98a;border-radius:999px;padding:8px 11px;cursor:pointer}
   .noteMeta{display:flex;align-items:center;justify-content:space-between;margin-top:10px}
   .btn.disabled{background:#d9d0bd;color:#8a8273;cursor:default;box-shadow:none}
@@ -147,7 +155,7 @@ const STEPS = new Set(['capturing','scrubbing','gated','record','flush','deliver
 const RESULT_STEPS = new Set(['gated','record','flush','delivered','pack']);
 const DRAFT_KEY = 'airplane-demo-draft-v2';
 const OUTBOX_KEY = 'airplane-demo-send-outbox-v1';
-const S = { screen:'capturing', note:'', result:null, error:null, posted:false, sendNote:'', sendQueued:false, trajectoryCount:0, trajectoryNote:'', packDemo:null, packError:null, listening:false, speechMsg:'', status:null, job:null };
+const S = { screen:'capturing', note:'', result:null, error:null, posted:false, sendNote:'', sendQueued:false, trajectoryCount:0, trajectoryNote:'', packDemo:null, packError:null, listening:false, speechMsg:'', status:null, job:null, capability:null };
 let recognizer = null;
 
 const $phone = document.getElementById('phone');
@@ -172,6 +180,29 @@ function flowHtml(active){
 
 function statusPill(label, ok){
   return `<span class="statusDot" style="color:${ok?'var(--green)':'var(--amber)'};background:${ok?'#e6f0e7':'#f6ecd6'};border-color:${ok?'#bfdcc6':'#e3c98a'}">${esc(label)}</span>`;
+}
+
+function capabilityHtml(){
+  const c = S.capability || {};
+  const secure = window.isSecureContext || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+  const webgpu = c.webgpu ? 'yes' : 'no';
+  const webgl = c.webgl2 ? '2' : (c.webgl ? '1' : 'no');
+  const mode = c.webgpu ? 'candidate' : (secure ? 'probe' : 'https needed');
+  const note = c.webgpu ? 'Browser-local Bonsai is plausible here; next step is a local WebGPU adapter.' :
+    (secure ? 'WebGPU not exposed here; try the HF Bonsai Space and record the result.' : 'LAN HTTP is not a secure context on phones; HF HTTPS can still prove WebGPU.');
+  return `<div class="capPanel">
+    <b>Browser inference probe</b>
+    <div class="capGrid">
+      <div class="capCell"><span>WebGPU</span><strong style="color:${c.webgpu?'var(--green)':'var(--amber)'}">${webgpu}</strong></div>
+      <div class="capCell"><span>WebGL</span><strong>${webgl}</strong></div>
+      <div class="capCell"><span>Mode</span><strong>${esc(mode)}</strong></div>
+    </div>
+    <div class="mono" style="font-size:9px;line-height:1.35;color:#736c5d;margin-top:8px">${esc(note)}</div>
+    <div class="capLinks">
+      <a href="https://huggingface.co/spaces/webml-community/bonsai-webgpu" target="_blank" rel="noopener">HF Bonsai WebGPU</a>
+      <a href="/api/status" target="_blank" rel="noopener">local status</a>
+    </div>
+  </div>`;
 }
 
 // ---------- screens ----------
@@ -211,6 +242,7 @@ const screens = {
      <div class="lessonBox"><b>Input</b><span>voice or typed session note</span></div>
      <div class="lessonBox good"><b>Boundary</b><span>raw PHI cannot egress</span></div>
    </div>
+   ${capabilityHtml()}
    <textarea id="noteInput" class="note" style="margin-top:10px" placeholder="Session note appears here…" oninput="handleNoteInput(this.value)">${esc(S.note)}</textarea>
    <div class="noteMeta">
      <button data-act="sample" class="sampleBtn">Use sample note</button>
@@ -762,6 +794,50 @@ async function doPackReveal(){
   if(S.screen==='pack') render();
 }
 
+function webglAvailable(kind){
+  try{
+    const canvas=document.createElement('canvas');
+    return !!canvas.getContext(kind, {failIfMajorPerformanceCaveat:false});
+  }catch(_){ return false; }
+}
+
+async function detectClientCapability(){
+  const cap = {
+    user_agent:navigator.userAgent || '',
+    platform:navigator.platform || '',
+    language:navigator.language || '',
+    webgpu:!!navigator.gpu,
+    webgl:webglAvailable('webgl') || webglAvailable('experimental-webgl'),
+    webgl2:webglAvailable('webgl2'),
+    webgpu_error:'',
+    hardware_concurrency:navigator.hardwareConcurrency || 0,
+    device_memory:navigator.deviceMemory || 0,
+    screen:{width:screen.width||0,height:screen.height||0,dpr:devicePixelRatio||1}
+  };
+  if(navigator.gpu && window.isSecureContext){
+    try{
+      const adapter = await navigator.gpu.requestAdapter();
+      if(!adapter){
+        cap.webgpu = false;
+        cap.webgpu_error = 'requestAdapter returned null';
+      }
+    }catch(err){
+      cap.webgpu = false;
+      cap.webgpu_error = err && err.message ? err.message : String(err);
+    }
+  } else if(navigator.gpu && !window.isSecureContext){
+    cap.webgpu_error = 'navigator.gpu present but page is not a secure context';
+  }
+  S.capability = cap;
+  render();
+  try{
+    const res = await fetch('/api/client-capability',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(cap)});
+    const data = await res.json().catch(()=>null);
+    if(data && data.ok && data.capability) S.capability = data.capability;
+  }catch(_){}
+  if(S.screen==='capturing') render();
+}
+
 function showSlack(){
   const rec=S.result.record;
   const themes=(rec.themes||[]).join(' · ');
@@ -791,7 +867,7 @@ function showSlack(){
              <span class="mono" style="font-size:11px;color:#a39a86">NEXT TOUCH</span><span class="mono">${esc(rec.next_touch||'—')}</span>
            </div>
            <div class="mono" style="display:flex;align-items:center;gap:8px;margin-top:15px;border-top:1px solid #f0eadd;padding-top:11px;font-size:10px;color:#8aa692">
-             <span style="color:var(--green)">✓</span> de-identified · gate-clean · ${S.posted?'posted from the edge':'ready to post'}</div>
+             <span style="color:var(--green)">✓</span> scrubbed · gate-clean · ${S.posted?'posted from the edge':'ready to post'}</div>
          </div>
          <div style="margin-top:14px;display:flex;align-items:center;gap:9px;flex-wrap:wrap">
            <span style="font:700 13px var(--sans);color:var(--red)">↑ No name. No member ID.</span>
@@ -826,11 +902,13 @@ async function refreshStatus(){
     const data = await res.json();
     if(data.ok){
       S.status=data;
+      if(data.client_capability) S.capability=data.client_capability;
       replayPendingSend('edge status restored');
       if(S.screen==='capturing' || S.job || S.sendQueued) render();
     }
   }catch(_){}
 }
+detectClientCapability();
 </script>
 </body>
 </html>

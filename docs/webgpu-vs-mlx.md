@@ -122,13 +122,14 @@ Best spike:
 
 ## Recommendation
 
-Do not choose by taste. Run two measurement spikes and let the phone decide:
+The first recommendation was to measure both paths. Jai has now validated the
+external Bonsai WebGPU demo on his phone, so the near-term decision changes:
 
-1. **WebGPU capability spike first** because it is the cheapest way to learn
-   whether the browser path is viable on the actual iPhone. It can reuse the web
-   shell and does not require app signing.
-2. **Native MLX Swift spike second** because it remains the stronger long-term
-   proof if WebGPU support, memory, or offline behavior is weak.
+1. **Browser GPU first.** It is now the highest-density next step because it can
+   reuse the web shell, the phone UX, and the existing Slack/gate loop.
+2. **Native MLX Swift second.** It remains the stronger long-term proof if
+   browser storage, HTTPS, offline behavior, or structured output are not good
+   enough.
 
 The shared invariant stays the same either way:
 
@@ -137,6 +138,9 @@ raw note -> local inference port -> host-side parse/clamp -> verifier gate -> cl
 ```
 
 The model runtime can change. The gate does not.
+
+For the current spike result and narrowed demo path, see
+[`browser-gpu-spike-report.md`](browser-gpu-spike-report.md).
 
 ## Sources To Check During The Spike
 

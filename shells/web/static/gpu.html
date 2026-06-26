@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Airplane Mode GPU Probe</title>
+<style>
+  :root{--bg:#f7f7f2;--ink:#221f19;--mut:#5d655f;--line:#dce2da;--green:#1f7a4d;--amber:#8a5a0f;--red:#bf3b2b;--blue:#245b8f;--mono:'SF Mono','SFMono-Regular',ui-monospace,Menlo,Consolas,monospace;--sans:-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI',system-ui,sans-serif}
+  body{margin:0;min-height:100vh;background:var(--bg);color:var(--ink);font-family:var(--sans);display:flex;align-items:center;justify-content:center;padding:20px}
+  main{width:min(520px,100%);background:#fff;border:1px solid var(--line);border-radius:18px;padding:20px;box-shadow:0 20px 50px -35px rgba(0,0,0,.35)}
+  h1{font:800 28px/1.05 var(--sans);letter-spacing:0;margin:0}
+  p{font:500 14px/1.55 var(--sans);color:var(--mut)}
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:16px 0}
+  .cell{border:1px solid var(--line);border-radius:12px;padding:12px 8px;text-align:center;background:#fbfcfa}
+  .cell span{display:block;font:800 10px var(--mono);text-transform:uppercase;color:#8a8273}
+  .cell strong{display:block;font:900 18px var(--mono);margin-top:5px}
+  .ok{color:var(--green)} .warn{color:var(--amber)} .bad{color:var(--red)}
+  pre{white-space:pre-wrap;word-break:break-word;background:#f6f1e8;border:1px solid #eadfca;border-radius:12px;padding:12px;font:500 11px/1.45 var(--mono);color:#4f493f;max-height:260px;overflow:auto}
+  a,.btn{display:inline-flex;align-items:center;justify-content:center;text-decoration:none;border-radius:999px;padding:10px 12px;border:1px solid #c9d9e7;background:#edf4fb;color:var(--blue);font:800 12px var(--mono);margin:4px 6px 0 0}
+  .btn{cursor:pointer}
+</style>
+</head>
+<body>
+<main>
+  <div style="font:800 11px var(--mono);letter-spacing:.08em;color:#8a8273;text-transform:uppercase">Airplane Mode spike</div>
+  <h1>Browser GPU capability</h1>
+  <p>This page does not capture notes or run the scrub workflow. It only checks whether this phone/browser can expose the GPU path we need before we wire Bonsai into the local verifier gate.</p>
+  <div class="grid">
+    <div class="cell"><span>Secure</span><strong id="secure" class="warn">...</strong></div>
+    <div class="cell"><span>WebGPU</span><strong id="webgpu" class="warn">...</strong></div>
+    <div class="cell"><span>WebGL</span><strong id="webgl" class="warn">...</strong></div>
+  </div>
+  <p id="summary">Checking browser capability...</p>
+  <div>
+    <a href="https://huggingface.co/spaces/webml-community/bonsai-webgpu" target="_blank" rel="noopener">HF Bonsai WebGPU</a>
+    <button class="btn" onclick="runProbe()">Run again</button>
+  </div>
+  <pre id="raw">{}</pre>
+</main>
+<script>
+function webglAvailable(kind){
+  try{ return !!document.createElement('canvas').getContext(kind, {failIfMajorPerformanceCaveat:false}); }
+  catch(_){ return false; }
+}
+function set(id,text,cls){
+  const el=document.getElementById(id);
+  el.textContent=text;
+  el.className=cls;
+}
+async function runProbe(){
+  const cap={
+    user_agent:navigator.userAgent||'',
+    platform:navigator.platform||'',
+    language:navigator.language||'',
+    webgpu:!!navigator.gpu,
+    webgl:webglAvailable('webgl')||webglAvailable('experimental-webgl'),
+    webgl2:webglAvailable('webgl2'),
+    webgpu_error:'',
+    hardware_concurrency:navigator.hardwareConcurrency||0,
+    device_memory:navigator.deviceMemory||0,
+    screen:{width:screen.width||0,height:screen.height||0,dpr:devicePixelRatio||1}
+  };
+  if(navigator.gpu && window.isSecureContext){
+    try{
+      const adapter=await navigator.gpu.requestAdapter();
+      if(!adapter){ cap.webgpu=false; cap.webgpu_error='requestAdapter returned null'; }
+    }catch(err){
+      cap.webgpu=false; cap.webgpu_error=err&&err.message?err.message:String(err);
+    }
+  }else if(navigator.gpu && !window.isSecureContext){
+    cap.webgpu_error='navigator.gpu present but page is not a secure context';
+  }
+  set('secure', window.isSecureContext?'yes':'no', window.isSecureContext?'ok':'warn');
+  set('webgpu', cap.webgpu?'yes':'no', cap.webgpu?'ok':'warn');
+  set('webgl', cap.webgl2?'2':(cap.webgl?'1':'no'), cap.webgl?'ok':'bad');
+  document.getElementById('summary').textContent = cap.webgpu
+    ? 'WebGPU is exposed here. Next step: local Bonsai browser adapter behind the verifier gate.'
+    : 'WebGPU is not exposed here. Use the Hugging Face Space as the external proof and check secure-context/browser constraints.';
+  document.getElementById('raw').textContent=JSON.stringify(cap,null,2);
+  try{
+    await fetch('/api/client-capability',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(cap)});
+  }catch(_){}
+}
+runProbe();
+</script>
+</body>
+</html>

@@ -69,7 +69,7 @@ Swift stops being "the risk" and becomes one thin adapter. Rust owns the core be
 | `InferenceProvider` | `complete(messages, json_schema, sampling) -> String` | mlx-swift, MLX weights, **client-side** constrained decode | HTTP → llama-server `/v1/chat/completions`, `response_format: json_schema` (grammar **server-side**) |
 | `SecureStore` | put/get the redaction map; never leaves device | Secure Enclave / Keychain | keychain (mac) / encrypted file |
 | `Capture` | yield raw note text | on-device ASR + text | stdin / argument |
-| `Sink` | accept **de-identified record only** | Slack Block Kit | Slack / mock / MCP tool-result |
+| `Sink` | accept **scrubbed record only** | Slack Block Kit | Slack / mock / MCP tool-result |
 
 **Why inference is a port, not in the core** (from `docs/seed/bonsai-ecosystem-brief.md`): Bonsai runs two genuinely different ways — `llama-server` (OpenAI-compatible HTTP, GGUF, grammar enforced server-side) on a laptop, vs. in-process `mlx-swift` (MLX weights) on iOS. Pulling either into the core would either bloat it or force a single runtime. Keeping it behind a trait keeps the core thin and auditable and lets a fork-built quant slot in with zero core change.
 

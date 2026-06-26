@@ -30,10 +30,11 @@ tools before they are scrubbed. For builders, the point is the reference
 architecture: model-as-port, deterministic harness, verifier gate, and
 declarative packs.
 
-This repo keeps those two registers separate. The runbook and pack workflow are
-written for CNCF-style end users who need a safe adoption path. The architecture,
-ports, and iOS simulator backend selector are written for builders who want to
-extend the inference path.
+This repo keeps those two registers separate. The docs are intentionally weighted
+about 70/30 toward the end user: the runbook and pack workflow come first for
+CNCF-style adopters who need a safe path, while the architecture, ports, and iOS
+simulator backend selector are exposed for builders who want to extend the
+inference path.
 
 ## Who Should Use This
 
@@ -274,7 +275,7 @@ Here are realistic starter ideas:
 
 - Intake note to care-team Slack summary.
 - Referral form scrubber before it enters a shared tracker.
-- De-identified coaching recap for a community health worker.
+- Scrubbed coaching recap for a community health worker.
 - Benefits navigation note that strips member IDs before routing.
 - Synthetic EHR discharge-summary exercise where only safe follow-ups leave.
 

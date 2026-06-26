@@ -83,7 +83,7 @@ sequenceDiagram
     Core-->>Web: Block egress
     Web-->>Phone: Not posted
   else zero residual identifiers
-    Web->>Slack: HTTPS post, de-identified payload only
+    Web->>Slack: HTTPS post, scrubbed payload only
     Slack-->>Web: Accepted
     Web->>Store: Append gate-clean trajectory tuple
     Web-->>Phone: Posted + trajectory count

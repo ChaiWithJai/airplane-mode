@@ -98,7 +98,7 @@ public struct AirplaneDemoView: View {
             labeledBlock("Captured synthetic note", model.flow.capturedText)
         case .scrubbing, .gated:
             VStack(alignment: .leading, spacing: 12) {
-                labeledBlock("De-identified note", model.flow.scrubbedText)
+                labeledBlock("Scrubbed note", model.flow.scrubbedText)
                 if let response = model.flow.lastResponse {
                     Text("Backend: \(model.flow.backend.runtime.label) · \(response.redactions.count) redactions · schema-compatible response")
                         .font(.footnote.monospaced())

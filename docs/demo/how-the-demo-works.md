@@ -51,7 +51,7 @@ The design is intentionally boring at the trust boundary:
 | Scrub | Mac `airplane-core` + local Bonsai | Mac loopback `127.0.0.1:8080` | raw note enters core; model sees scrubbed/prompted text only | model inference |
 | Verifier gate | Mac `airplane-core` | none | clean candidate only | string/rule scan |
 | Slack send | Mac web shell | HTTPS to Slack webhook | verifier-approved care record only | one network POST |
-| Trajectory append | Mac filesystem | none | de-identified tuple only | local JSONL append |
+| Trajectory append | Mac filesystem | none | verifier-approved scrubbed tuple only | local JSONL append |
 | Full eval/gates | Mac CLI + local Bonsai | Mac loopback `127.0.0.1:8080` | synthetic eval notes only | 21 notes x 5 seeded passes |
 
 Current eval profile from `eval/golden-run.txt`:

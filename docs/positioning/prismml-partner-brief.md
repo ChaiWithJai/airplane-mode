@@ -1,130 +1,243 @@
-# PrismML Partner Brief: Airplane Mode
+# The Briefcase: Jai x PrismML
 
-Draft for a respectful founder/team conversation. This is not a press release and
-not a demand. It is a clear offer: turn Airplane Mode into a useful reference
-integration for Bonsai adopters who care about edge inference, privacy-sensitive
-workflows, and auditable harnesses.
+Show the repo first. This document is the map after the proof is already on the
+table: what I see from the outside, what I have already built, and the 90-day
+plan I would run to help make Bonsai a reference point for edge inference.
 
-## Short Version
+This is written in the spirit of Ramit Sethi's Briefcase Technique, but with an
+abundance posture. Every gap is framed as an opening. The point is not "you have
+a problem." The point is "I am already building the missing layer, and it becomes
+more valuable if we do it together."
 
-Airplane Mode is a reference architecture for running a sensitive workflow at the
-edge with Bonsai, then proving that only a scrubbed record crosses the boundary.
-It is deliberately small: a Rust trust core, a Bonsai inference port, a verifier
-gate, a declarative pack, and thin shells for web, CLI, MCP, and iOS simulator
-work.
+## How To Use This
 
-The value to PrismML is not that this one healthcare demo becomes important on
-its own. The value is that it shows application developers how to make Bonsai
-useful in the kind of workflow they already own:
+Open with the live repo, not this page.
+
+1. Run the demo or show the eval output.
+2. Show that Bonsai is inside a verifier-gated workflow, not just a benchmark.
+3. Then hand over this brief.
+
+The repo is the proof. This document explains the opportunity.
+
+## 1. The Openings I See
+
+From the outside, PrismML has a strong technical thesis: intelligence density,
+open weights, edge deployment, and value migrating from centralized inference to
+local workflows. The openings below are not criticisms. They are the predictable
+next layer around a young technical company with a model that deserves a larger
+developer surface.
+
+1. **The ecosystem layer is still forming.**
+   PrismML has the model, the thesis, and the technical credibility. The next
+   layer is reference integrations, developer education, community cadence, and
+   use-case translation for application builders. That seat is valuable because
+   it turns model interest into adoption.
+
+2. **The `mlx-swift` on-device text path needs a reference integration.**
+   The Apple story is the edge story builders want to believe in. Image demos on
+   flagship hardware are promising, but 1.7B text on a measured phone is the path
+   application developers will ask for. Airplane Mode now has the simulator-side
+   contract and a visible replacement point: `TextInferenceProviding.complete(...)`.
+   The next move is real MLX text, measured honestly.
+
+3. **Regulated-vertical proof would make the thesis easier to buy.**
+   "Intelligence comes to the data" is compelling. It becomes much stronger when
+   paired with a measured workflow in a hard vertical: healthcare coaching,
+   benefits navigation, intake, referrals, or EHR-adjacent handoffs. The right
+   proof point is not a vague healthcare claim. It is a synthetic, gated,
+   reproducible workflow with numbers and clear non-claims.
+
+4. **Distribution is the scarce asset in an open-model category.**
+   If the model is open, the category advantage compounds through references,
+   docs, integrations, events, case studies, and developer trust. Capital and
+   technical credibility open doors. Community and channel turn the thesis into
+   repeated adoption.
+
+5. **The Rust, llama.cpp, MLX, and local-inference communities are ready for a
+   concrete Bonsai project.**
+   Those builders do not need a softer pitch. They need clean ports, reproducible
+   evals, named tradeoffs, and a contribution path that matters. The unwired MLX
+   text path is not embarrassing. It is a useful magnet if it is framed honestly.
+
+These are the openings I would expect to matter next. I am already working on
+the first two through Airplane Mode; the plan below extends that motion.
+
+## 2. What I Have Already Built
+
+There are two forms of proof: the artifact and the community muscle.
+
+### Pillar 1: The Working Reference
+
+`github.com/ChaiWithJai/airplane-mode` is a healthcare hackathon starter and
+reference architecture for privacy-sensitive edge workflows on Bonsai.
+
+What it does:
+
+- captures a synthetic coaching note;
+- runs a Bonsai-assisted scrub locally;
+- treats model output as untrusted text;
+- parses, validates, clamps, and redacts;
+- re-scans the exact outbound Slack payload;
+- blocks egress by default unless the verifier finds zero residual identifiers;
+- sends only a scrubbed care record to Slack;
+- keeps the model behind a swappable inference port;
+- lets adopters change declarative packs instead of editing the trust core.
+
+The measured point is simple: regex alone misses contextual identifiers; Bonsai
+inside a deterministic verifier harness catches the cases that matter for the
+demo. The current committed eval reports 100% recall and zero leakage on the
+synthetic golden set, with the docs naming the precision tradeoff and the open
+iOS hardware gap.
+
+The important part for PrismML is not that this one demo is healthcare. The
+important part is that it gives Bonsai a repeatable adoption shape:
 
 ```text
 raw workflow data -> local Bonsai-assisted scrub -> verifier gate -> clean egress
 ```
 
-That is the adoption story Bonsai needs in regulated and privacy-sensitive
-verticals: not "a smaller model exists," but "here is how to move a real workflow
-off the datacenter without asking the model to be trusted raw."
+That is the kind of shape an application developer can copy into another
+vertical.
 
-## Why This Helps PrismML
+### Pillar 2: The Community Layer Is Native To My Work
 
-PrismML already has a strong technical thesis: intelligence density, open weights,
-edge deployment, and value migrating away from centralized inference. Airplane
-Mode gives that thesis a concrete workflow shape.
+This is not a cold pivot into DevRel.
 
-It helps in four ways:
+- I shipped the Nomad UI at HashiCorp, so I understand the infrastructure
+  audience and the standard they apply to developer tools.
+- I run KVibe Studios, an 8,000 sq ft production space in Jersey City, so the
+  venue, content, and event infrastructure for a local community motion already
+  exists.
+- My actual origin is teaching and coaching. I started by coaching neighborhood
+  kids in my sister's driveway, and I am now building a school. Turning people
+  into a community of practice is not a side quest; it is the through-line.
 
-1. **A reference integration for application developers.**
-   The repo shows how to wrap Bonsai in a deterministic harness: schema-shaped
-   output, host-side parsing and clamping, recall-first redaction, and a
-   default-deny verifier over the outbound payload.
+That combination matters: I can build the technical reference, teach it clearly,
+and convene the people who will extend it.
 
-2. **A credible edge-inference story for cautious adopters.**
-   Healthcare, coaching, benefits navigation, and community-health teams do not
-   buy benchmarks first. They need a trust boundary, a runbook, and a way to
-   adapt the workflow without rewriting the core.
+## 3. The 90-Day Plan
 
-3. **A clean contribution path for the MLX text gap.**
-   The repo now has an iOS simulator backend selector and backend-compatible DTOs.
-   The next useful contribution is precise: replace the `mlx-swift` mock with a
-   real text adapter, then measure on the oldest available iPhone before making
-   claims about iPhone 11/A13 performance.
+The motion is simple: builders make the reference real, adopters make the proof
+credible. Run both tracks at once.
 
-4. **A story builders can respect.**
-   It names the real gaps. The current correctness path is laptop/llama-server.
-   The iOS path is simulator choreography and interop scaffolding. The hardware
-   proof is still a measurement gate. That honesty improves credibility with the
-   Rust, llama.cpp, MLX, and harness-engineering communities.
+### Days 0-30: Establish The Reference
 
-## What I Would Do
+- Ship the real `mlx-swift` Bonsai text adapter behind the existing
+  `TextInferenceProviding.complete(...)` boundary.
+- Measure honestly on the oldest available practical iPhone. The headline should
+  be whatever actually runs.
+- Publish Airplane Mode as a reference architecture: scrub -> gate -> clean
+  egress, model-as-port, declarative pack.
+- Publish the technical writeup: "How we made a 1-bit model useful inside a
+  verifier-gated workflow."
+- Open the first contribution path around the MLX text adapter, structured
+  output constraints, and pack extensions.
 
-I would position Airplane Mode as a Bonsai reference architecture and make it
-useful for both sides of the adoption loop.
+Validated by:
 
-For end users:
+- Airplane Mode already has the simulator-side backend selection and shared DTO
+  contract.
+- The eval harness already gives a reproducible proof surface.
+- The MLX text path is specific enough to be a real contribution, not a vague
+  roadmap item.
 
-- package the demo as a CNCF-style journey/runbook;
-- keep the language inside the substantiation envelope: scrubbed/redacted, not
-  legally conclusive "de-identified," and never "HIPAA-compliant";
-- show how a team changes a pack for its own workflow without touching the core;
-- create synthetic worked examples for intake notes, coaching recaps, benefits
-  navigation, and referral routing.
+Milestone:
 
-For builders:
+- Airplane Mode becomes the obvious Bonsai edge-workflow reference for builders
+  evaluating on-device text.
 
-- document the `InferenceProvider` port as the stable adapter contract;
-- make the `mlx-swift` text path a visible, well-scoped contribution;
-- keep eval and gate output reproducible;
-- publish the harness details: fixed-seed passes, schema constraints, output
-  hygiene, verifier gate, pack-blindness, and ethical gates.
+### Days 30-60: Convene NYC And Open The Funnel
 
-For PrismML:
+- Host the first NYC edge-inference build night around Bonsai at KVibe.
+- Turn the repo into a contributor surface: good-first issues, adapter notes,
+  pack-extension docs, and a short demo video.
+- Start the first adopter journey with a clinic, coaching practice, benefits
+  navigation team, or community-health workflow using synthetic data.
+- Run office hours for builders who want to port the pattern to their runtime or
+  vertical.
 
-- make Bonsai look practical in a workflow, not just impressive in isolation;
-- give PrismML a concrete adoption artifact to point to when founders, app
-  teams, or edge builders ask "what do I build with this?";
-- feed back integration footguns respectfully, especially around MLX text,
-  structured output, and stock-vs-fork runtime behavior;
-- produce a small number of high-signal artifacts: reference architecture,
-  healthcare hackathon starter, demo video/runbook, and contribution guide.
+Validated by:
 
-## What I Would Not Say
+- CNCF's adoption loop: builders create the reference, end users create the
+  journey reports.
+- The local NYC AI and edge-inference community needs concrete projects, not
+  generic meetups.
+- KVibe makes the convening cost low and the production quality high.
 
-I would avoid framing that sounds like PrismML has a problem only we can fix.
-Better framing:
+Milestone:
 
-- "This is a reference integration that makes the thesis concrete."
-- "This gives application developers a pattern to copy."
-- "This identifies a useful next adapter for the MLX text path."
-- "This is a small, honest bridge between the model release and adoption in
-  privacy-sensitive workflows."
+- A recurring NYC room, early contributors, and the first adopter journey in
+  progress.
 
-Avoid:
+### Days 60-90: Compound Into Proof And Presence
 
-- "PrismML lacks adoption proof."
-- "The current messaging is wrong."
-- "This demo proves iPhone 11 text inference."
-- "This is HIPAA-ready."
+- Publish the first regulated-vertical journey report using synthetic workflow
+  data and explicit non-claims.
+- Establish a content cadence: technical writeups, short demos, office hours,
+  and issue-led contribution prompts.
+- Anchor a Bonsai presence around NYC Tech Week and AI Engineer World's Fair
+  healthcare conversations.
+- Package the reference architecture so founders, app teams, and edge builders
+  can answer: "What do I build with Bonsai?"
 
-## The Ask
+Validated by:
 
-The best first ask is modest:
+- Open-model adoption compounds through reference projects, technical trust,
+  and repeated community touchpoints.
+- Regulated-vertical buyers need a boundary and a runbook before they need a
+  benchmark.
 
-> I am building Airplane Mode as an open reference architecture for Bonsai in
-> privacy-sensitive edge workflows. I would value PrismML's review of the adapter
-> contract and the MLX text path assumptions, especially where the simulator mock
-> should give way to a real `mlx-swift` implementation and device measurement.
+Milestone:
 
-That ask gives the team something concrete to react to without demanding a
-partnership, endorsement, or roadmap change.
+- Builders cite the reference. Adopters can point to a journey report. PrismML
+  has a concrete ecosystem motion online and in NYC.
 
-## The Contribution Boundary
+## 4. How We Would Know It Is Working
 
-The project will stay honest about what is proven:
+The signal should be countable:
 
-- Proven now: laptop edge path, llama-server integration, gates, Slack egress,
-  pack extension, simulator backend-selection scaffold.
-- Not proven yet: real `mlx-swift` text inference, iPhone 11/A13 throughput and
-  memory, Secure Enclave storage, real radios-off proof.
+- repo forks and meaningful stars;
+- external contributors and accepted PRs;
+- repeat attendance at the NYC build night;
+- inbound from teams adapting packs to their workflows;
+- the reference architecture cited in discussion, demos, or issues;
+- one published journey report with clear numbers and clear non-claims.
 
-The work becomes valuable precisely because it does not blur those boundaries.
-For adopters, that reduces risk. For builders, it earns trust.
+The goal is not vague awareness. The goal is reference status.
+
+## 5. The One Ask
+
+I am building the edge-inference community around Bonsai either way: the reference
+integration, the writeups, the NYC room, and the adopter path.
+
+I would rather do it with PrismML than next to PrismML.
+
+**One ask: let me become PrismML's reference and community presence for Bonsai
+edge workflows.** Start with Airplane Mode as the reference integration, review
+the MLX text adapter assumptions with me, and let me turn the repo, the events,
+and the adopter journey into the ecosystem layer this model deserves.
+
+This does not require a big announcement first. The first step can be small:
+review the adapter boundary, validate what PrismML wants represented accurately,
+and let the work earn the next step.
+
+## 6. Guardrails
+
+The credibility is the product, so I will not overclaim:
+
+- Not "on-device proven" until 1.7B text runs on a real measured device.
+- Not "de-identified" or "HIPAA-compliant." The repo says scrubbed, and so do I.
+- Not "intelligence density beats the field" as a benchmark claim. I will use it
+  as a framing for value migration and local workflow ownership.
+- Not "healthcare production-ready." It is a synthetic, verifier-gated starter
+  and reference architecture.
+
+Naming these limits is not a weakness. It is what lets cautious adopters trust
+the work and serious builders respect it.
+
+## One-Line
+
+I open with the working repo, name the openings I see from the outside, show that
+I have already built the hardest reference artifact and have the community muscle
+to grow it, then make one ask: build the Bonsai edge-inference ecosystem with
+PrismML, not next to PrismML.

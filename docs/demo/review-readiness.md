@@ -54,7 +54,7 @@ The current committed eval target is `eval/golden-run.txt`:
 | #8 MCP shell | Covered for smoke/parity | `shells/mcp`; `./run.sh mcp`; `scripts/smoke-mcp-cli-parity.sh` compares CLI/MCP scrubbed text on golden notes. |
 | #9 iOS/R1 | Simulator artifact only; hardware blocked | `shells/ios` Swift package proves choreography only; `docs/ios-shell-scaffold.md` documents non-claims. Real mlx-swift/R1 measurement still requires physical device. |
 | #10 Slack bot-token routing | Code covered; live credential missing | Web sink supports webhook, bot token, channel map, and Keychain lookup; `/api/send` gates the exact outbound Slack content before posting; `/api/scrub` returns redaction entity/layer summaries to the browser without raw matched text; local preflight is currently preview mode. |
-| #11 Manifest/provenance | Structural MVP partial | Manifest/provenance gates exist; no real Sigstore/Fulcio/Rekor cryptographic verification yet. |
+| #11 Manifest/provenance | Stronger local gate; still not full Sigstore | Manifest/provenance gates now require the trusted GitHub Actions release identity, UUID-shaped Rekor references, coherent provenance source/ref, and SHA-256 digests for declared pack files. This catches local pack tampering but still does not perform Fulcio certificate validation or Rekor inclusion proof. |
 | #12 Determinism | Covered locally | `./run.sh eval` / `--check` compares the current report to committed `eval/golden-run.txt`; `--update` is the explicit mutation path. Golden report includes precision and 21 notes. |
 
 ## Reviewer Notes

@@ -8,8 +8,13 @@
 use crate::rules::RulesExecutor;
 use anyhow::{bail, Context, Result};
 use serde::Deserialize;
+use sha2::{Digest, Sha256};
 use std::collections::BTreeSet;
-use std::path::{Path, PathBuf};
+use std::path::{Component, Path, PathBuf};
+
+const TRUSTED_ISSUER: &str = "https://token.actions.githubusercontent.com";
+const TRUSTED_IDENTITY: &str =
+    "ChaiWithJai/airplane-mode/.github/workflows/release.yml@refs/heads/main";
 
 #[derive(Debug, Deserialize)]
 struct PackFile {
@@ -53,6 +58,8 @@ struct ProvenanceFile {
     builder: ProvenanceBuilder,
     source: ProvenanceSource,
     #[serde(default)]
+    files: Vec<ProvenanceDigest>,
+    #[serde(default)]
     signature: Signature,
 }
 
@@ -74,6 +81,12 @@ struct ProvenanceSource {
     repository: String,
     #[serde(rename = "ref")]
     ref_name: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct ProvenanceDigest {
+    path: String,
+    sha256: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -228,6 +241,12 @@ impl Pack {
         )
         .context("parse provenance.yaml")?;
         validate_signature("provenance.signature", &prov.signature)?;
+        validate_same_release_identity(
+            "pack.signature",
+            &pf.signature,
+            "provenance.signature",
+            &prov.signature,
+        )?;
         if prov.subject.kind != "Pack"
             || prov.subject.name != pf.metadata.name
             || prov.subject.version != pf.metadata.version
@@ -240,6 +259,8 @@ impl Pack {
         if prov.source.repository.trim().is_empty() || prov.source.ref_name.trim().is_empty() {
             bail!("provenance.source must identify repository and ref");
         }
+        validate_provenance_source_matches_identity(&prov.source, &prov.signature)?;
+        validate_provenance_digests(dir, &prov.files)?;
         Ok(())
     }
 
@@ -262,6 +283,13 @@ impl Pack {
             &std::fs::read_to_string(pack_dir.join("pack.yaml")).context("read pack.yaml")?,
         )
         .context("parse pack.yaml")?;
+        validate_signature("pack.signature", &pf.signature)?;
+        validate_same_release_identity(
+            "pack.signature",
+            &pf.signature,
+            "manifest.signature",
+            &manifest.signature,
+        )?;
         let current_pack = format!("{}@{}", pf.metadata.name, pf.metadata.version);
         if manifest.current.pack != current_pack {
             bail!(
@@ -372,6 +400,18 @@ fn validate_signature(path: &str, sig: &Signature) -> Result<()> {
     if !sig.keyless {
         bail!("{path}.keyless must be true");
     }
+    if sig.issuer != TRUSTED_ISSUER {
+        bail!(
+            "{path}.issuer `{}` is not trusted; expected `{TRUSTED_ISSUER}`",
+            sig.issuer
+        );
+    }
+    if sig.identity != TRUSTED_IDENTITY {
+        bail!(
+            "{path}.identity `{}` is not trusted; expected `{TRUSTED_IDENTITY}`",
+            sig.identity
+        );
+    }
     for (field, value) in [
         ("issuer", sig.issuer.as_str()),
         ("identity", sig.identity.as_str()),
@@ -381,7 +421,130 @@ fn validate_signature(path: &str, sig: &Signature) -> Result<()> {
             bail!("{path}.{field} must be populated with non-placeholder metadata");
         }
     }
+    if !looks_like_uuid(&sig.rekor_log) {
+        bail!("{path}.rekorLog must be a UUID-shaped transparency-log reference");
+    }
     Ok(())
+}
+
+fn validate_same_release_identity(
+    left_path: &str,
+    left: &Signature,
+    right_path: &str,
+    right: &Signature,
+) -> Result<()> {
+    if left.issuer != right.issuer || left.identity != right.identity {
+        bail!("{left_path} and {right_path} must use the same release identity");
+    }
+    Ok(())
+}
+
+fn validate_provenance_source_matches_identity(
+    source: &ProvenanceSource,
+    sig: &Signature,
+) -> Result<()> {
+    let (repo, reference) = release_identity_parts(&sig.identity)?;
+    let expected_repo = format!("https://github.com/{repo}");
+    if source.repository != expected_repo {
+        bail!(
+            "provenance.source.repository `{}` does not match signature identity `{expected_repo}`",
+            source.repository
+        );
+    }
+    if source.ref_name != reference {
+        bail!(
+            "provenance.source.ref `{}` does not match signature identity ref `{reference}`",
+            source.ref_name
+        );
+    }
+    Ok(())
+}
+
+fn release_identity_parts(identity: &str) -> Result<(&str, &str)> {
+    let (repo_and_workflow, reference) = identity
+        .split_once('@')
+        .context("signature identity must include @ref")?;
+    let (repo, workflow) = repo_and_workflow
+        .split_once("/.github/workflows/")
+        .context("signature identity must name a GitHub Actions workflow")?;
+    if workflow.trim().is_empty() || reference.trim().is_empty() {
+        bail!("signature identity must include workflow and ref");
+    }
+    Ok((repo, reference))
+}
+
+fn looks_like_uuid(value: &str) -> bool {
+    let bytes = value.as_bytes();
+    if bytes.len() != 36 {
+        return false;
+    }
+    for (idx, byte) in bytes.iter().enumerate() {
+        match idx {
+            8 | 13 | 18 | 23 => {
+                if *byte != b'-' {
+                    return false;
+                }
+            }
+            _ => {
+                if !byte.is_ascii_hexdigit() {
+                    return false;
+                }
+            }
+        }
+    }
+    true
+}
+
+fn validate_provenance_digests(dir: &Path, files: &[ProvenanceDigest]) -> Result<()> {
+    if files.is_empty() {
+        bail!("provenance.files must list pack file sha256 digests");
+    }
+    let mut seen = BTreeSet::new();
+    for file in files {
+        let rel = safe_pack_rel_path(&file.path)?;
+        if !seen.insert(rel.clone()) {
+            bail!("provenance.files repeats `{}`", file.path);
+        }
+        let expected = file.sha256.trim().to_ascii_lowercase();
+        if expected.len() != 64 || !expected.chars().all(|c| c.is_ascii_hexdigit()) {
+            bail!("provenance.files `{}` has invalid sha256", file.path);
+        }
+        let actual = sha256_file(&dir.join(&rel))
+            .with_context(|| format!("hash provenance file `{}`", file.path))?;
+        if actual != expected {
+            bail!(
+                "provenance digest mismatch for `{}`: expected {}, got {}",
+                file.path,
+                expected,
+                actual
+            );
+        }
+    }
+    Ok(())
+}
+
+fn safe_pack_rel_path(path: &str) -> Result<PathBuf> {
+    let rel = Path::new(path);
+    if rel.is_absolute() {
+        bail!("provenance file path `{path}` must be relative");
+    }
+    let mut out = PathBuf::new();
+    for component in rel.components() {
+        match component {
+            Component::Normal(part) => out.push(part),
+            _ => bail!("provenance file path `{path}` must not escape the pack"),
+        }
+    }
+    if out.as_os_str().is_empty() {
+        bail!("provenance file path must not be empty");
+    }
+    Ok(out)
+}
+
+fn sha256_file(path: &Path) -> Result<String> {
+    let bytes = std::fs::read(path).with_context(|| format!("read {}", path.display()))?;
+    let digest = Sha256::digest(&bytes);
+    Ok(format!("{digest:x}"))
 }
 
 fn collect_clinical_claims(
@@ -500,8 +663,8 @@ followup:
     fn signature_rejects_placeholders() {
         let sig = Signature {
             keyless: true,
-            issuer: "https://token.actions.githubusercontent.com".into(),
-            identity: "repo/workflow".into(),
+            issuer: TRUSTED_ISSUER.into(),
+            identity: TRUSTED_IDENTITY.into(),
             rekor_log: "<uuid-after-signing>".into(),
         };
         assert!(validate_signature("pack.signature", &sig).is_err());
@@ -511,11 +674,36 @@ followup:
     fn signature_accepts_keyless_metadata() {
         let sig = Signature {
             keyless: true,
-            issuer: "https://token.actions.githubusercontent.com".into(),
-            identity: "repo/workflow".into(),
+            issuer: TRUSTED_ISSUER.into(),
+            identity: TRUSTED_IDENTITY.into(),
             rekor_log: "00000000-0000-4000-8000-000000000001".into(),
         };
         assert!(validate_signature("pack.signature", &sig).is_ok());
+    }
+
+    #[test]
+    fn signature_rejects_untrusted_release_identity() {
+        let untrusted_issuer = Signature {
+            keyless: true,
+            issuer: "https://example.invalid".into(),
+            identity: TRUSTED_IDENTITY.into(),
+            rekor_log: "00000000-0000-4000-8000-000000000001".into(),
+        };
+        let untrusted_identity = Signature {
+            keyless: true,
+            issuer: TRUSTED_ISSUER.into(),
+            identity: "Other/repo/.github/workflows/release.yml@refs/heads/main".into(),
+            rekor_log: "00000000-0000-4000-8000-000000000001".into(),
+        };
+        let bad_rekor = Signature {
+            keyless: true,
+            issuer: TRUSTED_ISSUER.into(),
+            identity: TRUSTED_IDENTITY.into(),
+            rekor_log: "not-a-uuid".into(),
+        };
+        assert!(validate_signature("pack.signature", &untrusted_issuer).is_err());
+        assert!(validate_signature("pack.signature", &untrusted_identity).is_err());
+        assert!(validate_signature("pack.signature", &bad_rekor).is_err());
     }
 
     #[test]
@@ -531,7 +719,7 @@ followup:
             r#"
 metadata: { name: coach-session, version: 1.0.0, targetCore: ">=1.0.0 <2.0.0" }
 spec: { recognizers: [] }
-signature: { keyless: true, issuer: test, identity: test, rekorLog: "00000000-0000-4000-8000-000000000001" }
+signature: { keyless: true, issuer: "https://token.actions.githubusercontent.com", identity: "ChaiWithJai/airplane-mode/.github/workflows/release.yml@refs/heads/main", rekorLog: "00000000-0000-4000-8000-000000000001" }
 "#,
         )
         .unwrap();
@@ -544,11 +732,81 @@ previousSequence: 1
 current: { core: 0.1.0, model: "ternary-bonsai-1.7b@local-gguf", pack: "coach-session@1.0.0" }
 revoked:
   - { pack: "coach-session@1.0.0", reason: "recall regression" }
-signature: { keyless: true, issuer: test, identity: test, rekorLog: "00000000-0000-4000-8000-000000000002" }
+signature: { keyless: true, issuer: "https://token.actions.githubusercontent.com", identity: "ChaiWithJai/airplane-mode/.github/workflows/release.yml@refs/heads/main", rekorLog: "00000000-0000-4000-8000-000000000002" }
 "#,
         )
         .unwrap();
         assert!(Pack::validate_manifest_revocation(&manifest, &dir).is_err());
         let _ = std::fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn provenance_digest_rejects_tampered_pack_file() {
+        let nonce = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let dir = std::env::temp_dir().join(format!("airplane-provenance-test-{nonce}"));
+        std::fs::create_dir_all(&dir).unwrap();
+        let pack_yaml = r#"
+metadata: { name: coach-session, version: 1.0.0, targetCore: ">=1.0.0 <2.0.0" }
+spec: { recognizers: [], policy: policy.yaml }
+signature: { keyless: true, issuer: "https://token.actions.githubusercontent.com", identity: "ChaiWithJai/airplane-mode/.github/workflows/release.yml@refs/heads/main", rekorLog: "00000000-0000-4000-8000-000000000001" }
+"#;
+        std::fs::write(dir.join("pack.yaml"), pack_yaml).unwrap();
+        std::fs::write(dir.join("policy.yaml"), "deidentification: {}\n").unwrap();
+        let pack_digest = sha256_file(&dir.join("pack.yaml")).unwrap();
+        let policy_digest = sha256_file(&dir.join("policy.yaml")).unwrap();
+        std::fs::write(
+            dir.join("provenance.yaml"),
+            format!(
+                r#"
+subject: {{ kind: Pack, name: coach-session, version: 1.0.0 }}
+builder: {{ id: github-actions, workflow: release.yml }}
+source: {{ repository: https://github.com/ChaiWithJai/airplane-mode, ref: refs/heads/main }}
+files:
+  - {{ path: pack.yaml, sha256: "{pack_digest}" }}
+  - {{ path: policy.yaml, sha256: "{policy_digest}" }}
+signature: {{ keyless: true, issuer: "https://token.actions.githubusercontent.com", identity: "ChaiWithJai/airplane-mode/.github/workflows/release.yml@refs/heads/main", rekorLog: "00000000-0000-4000-8000-000000000001" }}
+"#
+            ),
+        )
+        .unwrap();
+
+        assert!(Pack::validate_signature_provenance(&dir).is_ok());
+        std::fs::write(
+            dir.join("policy.yaml"),
+            "deidentification: { profile: changed }\n",
+        )
+        .unwrap();
+        let err = Pack::validate_signature_provenance(&dir)
+            .unwrap_err()
+            .to_string();
+        assert!(err.contains("digest mismatch"), "{err}");
+        let _ = std::fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn provenance_source_must_match_release_identity() {
+        let source = ProvenanceSource {
+            repository: "https://github.com/ChaiWithJai/airplane-mode".into(),
+            ref_name: "refs/tags/v1.0.0".into(),
+        };
+        let sig = Signature {
+            keyless: true,
+            issuer: TRUSTED_ISSUER.into(),
+            identity: TRUSTED_IDENTITY.into(),
+            rekor_log: "00000000-0000-4000-8000-000000000001".into(),
+        };
+        assert!(validate_provenance_source_matches_identity(&source, &sig).is_err());
+    }
+
+    #[test]
+    fn provenance_digest_paths_must_stay_inside_pack() {
+        let file = ProvenanceDigest {
+            path: "../policy.yaml".into(),
+            sha256: "0".repeat(64),
+        };
+        assert!(validate_provenance_digests(Path::new("."), &[file]).is_err());
     }
 }

@@ -1,6 +1,6 @@
 # CANON — Current Demo Contract
 
-This file is the low-cognitive-load orientation for the current Airplane Mode
+This file is the low-cognitive-load orientation for the current Bonsai PHI Scrubber
 demo. Historical canon and superseded design material live in
 [`docs/deprecations/canon/`](docs/deprecations/canon/).
 

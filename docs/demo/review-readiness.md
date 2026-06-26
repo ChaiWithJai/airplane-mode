@@ -13,7 +13,7 @@ production implementation.
   workspace and the generated incoming webhook is stored in macOS Keychain as
   `slack-webhook-url`.
 - Slack channel: `#coach-records` exists in Jai's Slack workspace and has received
-  app-originated posts from the `Airplane Mode` Slack app.
+  app-originated posts from the `Bonsai PHI Scrubber` Slack app.
 
 The app now reports Slack and local model readiness on screen 1 before dictation starts.
 On this machine, the webhook route is live; other machines still need one runtime

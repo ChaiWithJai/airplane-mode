@@ -14,7 +14,7 @@ use std::path::{Component, Path, PathBuf};
 
 const TRUSTED_ISSUER: &str = "https://token.actions.githubusercontent.com";
 const TRUSTED_IDENTITY: &str =
-    "ChaiWithJai/airplane-mode/.github/workflows/release.yml@refs/heads/main";
+    "ChaiWithJai/bonsai-phi-scrubber/.github/workflows/release.yml@refs/heads/main";
 
 #[derive(Debug, Deserialize)]
 struct PackFile {
@@ -719,7 +719,7 @@ followup:
             r#"
 metadata: { name: coach-session, version: 1.0.0, targetCore: ">=1.0.0 <2.0.0" }
 spec: { recognizers: [] }
-signature: { keyless: true, issuer: "https://token.actions.githubusercontent.com", identity: "ChaiWithJai/airplane-mode/.github/workflows/release.yml@refs/heads/main", rekorLog: "00000000-0000-4000-8000-000000000001" }
+signature: { keyless: true, issuer: "https://token.actions.githubusercontent.com", identity: "ChaiWithJai/bonsai-phi-scrubber/.github/workflows/release.yml@refs/heads/main", rekorLog: "00000000-0000-4000-8000-000000000001" }
 "#,
         )
         .unwrap();
@@ -732,7 +732,7 @@ previousSequence: 1
 current: { core: 0.1.0, model: "ternary-bonsai-1.7b@local-gguf", pack: "coach-session@1.0.0" }
 revoked:
   - { pack: "coach-session@1.0.0", reason: "recall regression" }
-signature: { keyless: true, issuer: "https://token.actions.githubusercontent.com", identity: "ChaiWithJai/airplane-mode/.github/workflows/release.yml@refs/heads/main", rekorLog: "00000000-0000-4000-8000-000000000002" }
+signature: { keyless: true, issuer: "https://token.actions.githubusercontent.com", identity: "ChaiWithJai/bonsai-phi-scrubber/.github/workflows/release.yml@refs/heads/main", rekorLog: "00000000-0000-4000-8000-000000000002" }
 "#,
         )
         .unwrap();
@@ -751,7 +751,7 @@ signature: { keyless: true, issuer: "https://token.actions.githubusercontent.com
         let pack_yaml = r#"
 metadata: { name: coach-session, version: 1.0.0, targetCore: ">=1.0.0 <2.0.0" }
 spec: { recognizers: [], policy: policy.yaml }
-signature: { keyless: true, issuer: "https://token.actions.githubusercontent.com", identity: "ChaiWithJai/airplane-mode/.github/workflows/release.yml@refs/heads/main", rekorLog: "00000000-0000-4000-8000-000000000001" }
+signature: { keyless: true, issuer: "https://token.actions.githubusercontent.com", identity: "ChaiWithJai/bonsai-phi-scrubber/.github/workflows/release.yml@refs/heads/main", rekorLog: "00000000-0000-4000-8000-000000000001" }
 "#;
         std::fs::write(dir.join("pack.yaml"), pack_yaml).unwrap();
         std::fs::write(dir.join("policy.yaml"), "deidentification: {}\n").unwrap();
@@ -763,11 +763,11 @@ signature: { keyless: true, issuer: "https://token.actions.githubusercontent.com
                 r#"
 subject: {{ kind: Pack, name: coach-session, version: 1.0.0 }}
 builder: {{ id: github-actions, workflow: release.yml }}
-source: {{ repository: https://github.com/ChaiWithJai/airplane-mode, ref: refs/heads/main }}
+source: {{ repository: https://github.com/ChaiWithJai/bonsai-phi-scrubber, ref: refs/heads/main }}
 files:
   - {{ path: pack.yaml, sha256: "{pack_digest}" }}
   - {{ path: policy.yaml, sha256: "{policy_digest}" }}
-signature: {{ keyless: true, issuer: "https://token.actions.githubusercontent.com", identity: "ChaiWithJai/airplane-mode/.github/workflows/release.yml@refs/heads/main", rekorLog: "00000000-0000-4000-8000-000000000001" }}
+signature: {{ keyless: true, issuer: "https://token.actions.githubusercontent.com", identity: "ChaiWithJai/bonsai-phi-scrubber/.github/workflows/release.yml@refs/heads/main", rekorLog: "00000000-0000-4000-8000-000000000001" }}
 "#
             ),
         )
@@ -789,7 +789,7 @@ signature: {{ keyless: true, issuer: "https://token.actions.githubusercontent.co
     #[test]
     fn provenance_source_must_match_release_identity() {
         let source = ProvenanceSource {
-            repository: "https://github.com/ChaiWithJai/airplane-mode".into(),
+            repository: "https://github.com/ChaiWithJai/bonsai-phi-scrubber".into(),
             ref_name: "refs/tags/v1.0.0".into(),
         };
         let sig = Signature {

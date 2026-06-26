@@ -1,7 +1,7 @@
-# airplane-web — Beat 1 demo (web shell)
+# airplane-web — Bonsai PHI Scrubber web shell
 
 A third adapter over `airplane-core` (alongside the CLI and the iOS shell): a small Rust
-server + a single-phone web UI that walks the **Beat 1 "airplane-mode loop"** — Idle →
+server + a single-phone web UI that walks the **scrub -> gate -> clean egress loop** — Idle →
 Capturing → **Scrubbing** → **Gated** → Structured → Send-held → **Flush** → Delivered,
 then the Slack card. The scrub and verifier gate are **real** (same core the eval runs);
 the structurer runs only on the already-scrubbed text.
@@ -26,9 +26,9 @@ instead of the cloud. The phone is the touchscreen; its browser sends the raw no
 laptop over a **local link** (Wi-Fi/hotspot), never to the cloud or any third party. So the
 honest claim here is **"the raw note never leaves the local machine/network,"** and the
 verifier gate proves **only a scrubbed record is ever eligible to leave** it. The
-stronger "never leaves the *phone*" claim would require running Bonsai in the phone browser
-(WASM) — a future stretch. The "airplane mode" toggle in the UI gates *egress* (the send),
-demonstrating the no-leak logic; the scrub always runs locally.
+stronger "never leaves the *phone*" claim requires a measured Browser GPU or native iOS
+runtime. The UI gates *egress* (the send), demonstrating the no-leak logic; the scrub
+always runs on the first-party edge.
 
 ## Engineering notes (why the scrub looks the way it does)
 

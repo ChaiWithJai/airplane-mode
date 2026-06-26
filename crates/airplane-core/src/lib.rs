@@ -1,6 +1,6 @@
 //! # airplane-core
 //!
-//! The portable, auditable **trust core** for the Airplane Mode on-device PHI scrubber.
+//! The portable, auditable **trust core** for the Bonsai PHI Scrubber on-device PHI scrubber.
 //! It owns the deterministic, legally-critical logic and depends only on *ports* —
 //! never on a platform, a model runtime, or a network.
 //!

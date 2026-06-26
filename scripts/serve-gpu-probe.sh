@@ -3,7 +3,7 @@ set -euo pipefail
 
 # Capability-only browser GPU probe.
 #
-# This intentionally does NOT serve the Airplane Mode scrub UI, /api/scrub,
+# This intentionally does NOT serve the Bonsai PHI Scrubber scrub UI, /api/scrub,
 # /api/send, or /api/trajectory. It is safe to expose through an HTTPS tunnel
 # because it collects browser/runtime capability only, not notes or PHI.
 
@@ -76,7 +76,7 @@ class Handler(BaseHTTPRequestHandler):
         self._send(200, json.dumps({"ok": True, "capability": latest}, indent=2), "application/json")
 
 server = ThreadingHTTPServer((host, port), Handler)
-print(f"Airplane Mode GPU probe only: http://{host}:{port}/gpu", flush=True)
+print(f"Bonsai PHI Scrubber GPU probe only: http://{host}:{port}/gpu", flush=True)
 print("Tunnel only this port for HTTPS capability checks. Do not tunnel the scrub demo.", flush=True)
 server.serve_forever()
 PY

@@ -36,7 +36,7 @@ developer surface.
 2. **The `mlx-swift` on-device text path needs a reference integration.**
    The Apple story is the edge story builders want to believe in. Image demos on
    flagship hardware are promising, but 1.7B text on a measured phone is the path
-   application developers will ask for. Airplane Mode now has the simulator-side
+   application developers will ask for. Bonsai PHI Scrubber now has the simulator-side
    contract and a visible replacement point: `TextInferenceProviding.complete(...)`.
    The next move is real MLX text, measured honestly.
 
@@ -60,7 +60,7 @@ developer surface.
    text path is not embarrassing. It is a useful magnet if it is framed honestly.
 
 These are the openings I would expect to matter next. I am already working on
-the first two through Airplane Mode; the plan below extends that motion.
+the first two through Bonsai PHI Scrubber; the plan below extends that motion.
 
 ## 2. What I Have Already Built
 
@@ -68,7 +68,7 @@ There are two forms of proof: the artifact and the community muscle.
 
 ### Pillar 1: The Working Reference
 
-`github.com/ChaiWithJai/airplane-mode` is a healthcare hackathon starter and
+`github.com/ChaiWithJai/bonsai-phi-scrubber` is a healthcare hackathon starter and
 reference architecture for privacy-sensitive edge workflows on Bonsai.
 
 What it does:
@@ -126,7 +126,7 @@ credible. Run both tracks at once.
   `TextInferenceProviding.complete(...)` boundary.
 - Measure honestly on the oldest available practical iPhone. The headline should
   be whatever actually runs.
-- Publish Airplane Mode as a reference architecture: scrub -> gate -> clean
+- Publish Bonsai PHI Scrubber as a reference architecture: scrub -> gate -> clean
   egress, model-as-port, declarative pack.
 - Publish the technical writeup: "How we made a 1-bit model useful inside a
   verifier-gated workflow."
@@ -135,7 +135,7 @@ credible. Run both tracks at once.
 
 Validated by:
 
-- Airplane Mode already has the simulator-side backend selection and shared DTO
+- Bonsai PHI Scrubber already has the simulator-side backend selection and shared DTO
   contract.
 - The eval harness already gives a reproducible proof surface.
 - The MLX text path is specific enough to be a real contribution, not a vague
@@ -143,7 +143,7 @@ Validated by:
 
 Milestone:
 
-- Airplane Mode becomes the obvious Bonsai edge-workflow reference for builders
+- Bonsai PHI Scrubber becomes the obvious Bonsai edge-workflow reference for builders
   evaluating on-device text.
 
 ### Days 30-60: Convene NYC And Open The Funnel
@@ -213,7 +213,7 @@ integration, the writeups, the NYC room, and the adopter path.
 I would rather do it with PrismML than next to PrismML.
 
 **One ask: let me become PrismML's reference and community presence for Bonsai
-edge workflows.** Start with Airplane Mode as the reference integration, review
+edge workflows.** Start with Bonsai PHI Scrubber as the reference integration, review
 the MLX text adapter assumptions with me, and let me turn the repo, the events,
 and the adopter journey into the ecosystem layer this model deserves.
 

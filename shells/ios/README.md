@@ -1,7 +1,7 @@
 # airplane-ios — simulator-safe shell scaffold
 
 This is a minimal Swift Package scaffold for the future native iOS shell. It is intentionally
-honest: it simulates the Beat 1 Airplane Mode flow and UI states, but it does **not** claim the
+honest: it simulates the Beat 1 Bonsai PHI Scrubber flow and UI states, but it does **not** claim the
 M3 hardware proof.
 
 ## What it proves
@@ -29,7 +29,7 @@ M3 hardware proof.
 - No real `mlx-swift` integration or in-process Bonsai text model runs here.
 - No UniFFI binding to `airplane-core` is wired yet.
 - No Secure Enclave or Keychain implementation is claimed; storage is in-memory simulator state.
-- No real Airplane Mode/radio-off proof is claimed.
+- No real Bonsai PHI Scrubber/radio-off proof is claimed.
 - No R1 measurement has been performed on iPhone 11/A13 or any other device from this scaffold.
 - No real Slack sink is used; delivery is a simulated clean payload state.
 

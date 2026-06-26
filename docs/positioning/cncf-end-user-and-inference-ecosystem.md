@@ -1,6 +1,6 @@
 # Positioning: CNCF End User And Inference Ecosystem
 
-Airplane Mode is one artifact with two audiences. The audiences need opposite
+Bonsai PHI Scrubber is one artifact with two audiences. The audiences need opposite
 registers, and the docs should weight them roughly **70/30 toward the end user**:
 lead with the adopter's job and safety boundary, then expose the builder-grade
 mechanism for people who want to fork or extend the work.

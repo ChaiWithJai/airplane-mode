@@ -1,6 +1,6 @@
 # Reference Architecture: Scrub, Gate, Clean Egress
 
-Airplane Mode is a reference architecture for moving a sensitive workflow to the
+Bonsai PHI Scrubber is a reference architecture for moving a sensitive workflow to the
 edge. It is written first for adopters who need a safer operating pattern, and
 second for builders who want to extend the inference runtime.
 

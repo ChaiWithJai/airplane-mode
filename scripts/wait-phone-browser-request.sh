@@ -16,7 +16,7 @@ fi
 mkdir -p "$(dirname "$OUT")"
 
 cat <<EOF
-Airplane Mode passive phone request observer
+Bonsai PHI Scrubber passive phone request observer
   app:     $URL
   status:  $URL/api/status
   output:  $OUT

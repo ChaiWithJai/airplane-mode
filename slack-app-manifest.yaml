@@ -2,11 +2,11 @@ _metadata:
   major_version: 1
   minor_version: 1
 display_information:
-  name: Airplane Mode
-  description: Gate-clean de-identified coach-session records for the Airplane Mode demo.
+  name: Bonsai PHI Scrubber
+  description: Gate-clean de-identified coach-session records for the Bonsai PHI Scrubber demo.
 features:
   bot_user:
-    display_name: Airplane Mode
+    display_name: Bonsai PHI Scrubber
     always_online: false
 oauth_config:
   scopes:

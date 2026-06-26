@@ -207,7 +207,7 @@ fn run_eval(use_model: bool) -> Result<EvalOutcome> {
     eprintln!("eval complete in {:.1}s", started.elapsed().as_secs_f32());
 
     let report = format!(
-        "Airplane Mode — eval/golden-run\n\
+        "Bonsai PHI Scrubber — eval/golden-run\n\
          pack            : {}\n\
          model layer     : {}\n\
          decoding        : {} seeded passes unioned (temp 0.5, seeds 42..)  [deterministic]\n\

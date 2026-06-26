@@ -1,6 +1,6 @@
 # Sovereign Network Pattern
 
-Airplane Mode is a first-party edge workload, not a SaaS proxy. The phone talks
+Bonsai PHI Scrubber is a first-party edge workload, not a SaaS proxy. The phone talks
 to infrastructure the adopter controls: a laptop, clinic server, private Wi-Fi,
 hotspot, or IT-managed private network. The sensitive path does not require
 Cloudflare, ngrok, a vendor tunnel, or any third-party relay.
@@ -65,7 +65,7 @@ Non-goals for the sensitive path:
 Third-party public services may still be used for **capability-only** checks when
 they do not carry notes, records, or trajectories. Example: the Hugging Face
 Bonsai WebGPU Space proves a browser runtime can work. It does not become the
-Airplane Mode data path.
+Bonsai PHI Scrubber data path.
 
 ## End-User Extension Model
 

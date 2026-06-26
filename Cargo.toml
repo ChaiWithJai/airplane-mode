@@ -5,7 +5,7 @@ members = ["crates/airplane-core", "shells/cli", "shells/mcp", "shells/web"]
 [workspace.package]
 edition = "2021"
 license = "Apache-2.0"
-repository = "https://github.com/ChaiWithJai/airplane-mode"
+repository = "https://github.com/ChaiWithJai/bonsai-phi-scrubber"
 
 [workspace.dependencies]
 serde = { version = "1", features = ["derive"] }

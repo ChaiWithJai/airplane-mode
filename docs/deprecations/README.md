@@ -2,7 +2,7 @@
 
 This folder keeps the demo clean without erasing useful ecosystem history.
 
-Airplane Mode now has a core demo path:
+Bonsai PHI Scrubber now has a core demo path:
 
 ```text
 phone browser -> first-party edge laptop -> verifier gate -> Slack

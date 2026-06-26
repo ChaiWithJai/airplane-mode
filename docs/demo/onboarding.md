@@ -1,4 +1,4 @@
-# Airplane Mode — Beat 1 Demo Runbook (Phone)
+# Bonsai PHI Scrubber — Beat 1 Demo Runbook (Phone)
 
 Run the on-device PHI-scrub demo on a phone in about five minutes: a clean web shell over the Rust `airplane-core`, with all the model work happening locally on your Mac.
 

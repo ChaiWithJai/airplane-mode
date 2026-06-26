@@ -8,11 +8,11 @@ builder:
   id: github-actions
   workflow: release.yml
 source:
-  repository: https://github.com/ChaiWithJai/airplane-mode
+  repository: https://github.com/ChaiWithJai/bonsai-phi-scrubber
   ref: refs/heads/main
 files:
   - path: pack.yaml
-    sha256: fc2f1b745ea0c29c69fe8ad5108871fd61ea565dd1dc2cba7172de55754de819
+    sha256: d4fbad55f9831ea4a174737c9cf45f2d7f6eaccd68f8893a36faffd849e32f9e
   - path: recognizers/members.json
     sha256: 3bd5ae6688cd780f980ce52e61eee9f2aab51d0456c6e6f25558652bf2ff0175
   - path: recognizers/people.json
@@ -28,5 +28,5 @@ files:
 signature:
   keyless: true
   issuer: https://token.actions.githubusercontent.com
-  identity: ChaiWithJai/airplane-mode/.github/workflows/release.yml@refs/heads/main
+  identity: ChaiWithJai/bonsai-phi-scrubber/.github/workflows/release.yml@refs/heads/main
   rekorLog: 00000000-0000-4000-8000-000000000001

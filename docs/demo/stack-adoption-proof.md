@@ -6,7 +6,7 @@ whether the template is understandable, reproducible, and adoptable.
 
 ## The Promise
 
-Airplane Mode proves this pattern:
+Bonsai PHI Scrubber proves this pattern:
 
 ```text
 capture a synthetic sensitive note

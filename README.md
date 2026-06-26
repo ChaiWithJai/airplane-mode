@@ -1,4 +1,4 @@
-# Airplane Mode
+# Bonsai PHI Scrubber
 
 Build a healthcare hackathon demo where a sensitive note is scrubbed at the edge,
 verified before egress, and only a scrubbed care record reaches Slack.
@@ -94,8 +94,8 @@ pull requests. Running the demo locally does not require it.
 Clone the repo:
 
 ```bash
-git clone https://github.com/ChaiWithJai/airplane-mode.git
-cd airplane-mode
+git clone https://github.com/ChaiWithJai/bonsai-phi-scrubber.git
+cd bonsai-phi-scrubber
 ```
 
 Start the local Bonsai model server in terminal 1:
@@ -151,6 +151,18 @@ The intended network shape is first-party and sovereign: phone to your own
 laptop, hotspot, LAN, or IT-managed VPN. Do not use a third-party public tunnel
 for the scrub workflow. See
 [`docs/sovereign-network-pattern.md`](docs/sovereign-network-pattern.md).
+
+## Critical Path Screenshots
+
+These are the four screens to use when explaining the demo to a hackathon team,
+an internal sponsor, or a builder deciding where to extend the stack.
+
+| Step | Screenshot | What it proves |
+| --- | --- | --- |
+| Capture | ![Synthetic note capture screen](docs/demo/screenshots/01-capture.png) | A phone or laptop browser can capture a synthetic note and select the runtime path without sending it to a third-party app. |
+| Gate | ![Verifier gate screen](docs/demo/screenshots/02-verifier-gate.png) | The Rust verifier sees zero residual identifiers before any Slack or trajectory egress is allowed. |
+| Clean egress | ![Slack delivery screen](docs/demo/screenshots/03-slack-delivery.png) | Only the scrubbed care record is posted to Slack, and trajectory storage waits for Slack acknowledgement. |
+| Extend | ![Declarative pack reveal screen](docs/demo/screenshots/04-pack-reveal.png) | The adoption unit is a declarative pack: change recognizers, schema, policy, sink, and evals without weakening the core gate. |
 
 To verify the simulator-safe iOS scaffold and backend selector, run:
 
@@ -451,7 +463,7 @@ recover with Git when a builder has a real use case.
 | `docs/extending.md` | Pack extension walkthrough. |
 | `docs/demo/how-the-demo-works.md` | Architecture, topology, workload profile, worked examples. |
 | `docs/positioning/cncf-end-user-and-inference-ecosystem.md` | Audience split: adopter outcome language vs. builder mechanism language. |
-| `docs/positioning/prismml-partner-brief.md` | Respectful partner-facing brief for how Airplane Mode can help Bonsai adoption. |
+| `docs/positioning/prismml-partner-brief.md` | Respectful partner-facing brief for how Bonsai PHI Scrubber can help Bonsai adoption. |
 | `AGENTS.md` | Harnessed build loop and hard rules. |
 | `CANON.md` | Design canon index. |
 

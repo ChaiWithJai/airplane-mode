@@ -52,7 +52,7 @@ public struct AirplaneDemoView: View {
                 controls
             }
             .padding()
-            .navigationTitle("Airplane Mode")
+            .navigationTitle("Bonsai PHI Scrubber")
         }
     }
 

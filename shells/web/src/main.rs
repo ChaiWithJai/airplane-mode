@@ -1344,7 +1344,7 @@ fn main() -> Result<()> {
     let addr = std::env::var("AIRPLANE_WEB_ADDR").unwrap_or_else(|_| DEFAULT_ADDR.to_string());
     let server = tiny_http::Server::http(&addr).map_err(|e| anyhow::anyhow!("bind {addr}: {e}"))?;
     let port = addr.rsplit_once(':').map(|(_, p)| p).unwrap_or("8099");
-    println!("Airplane Mode — web shell");
+    println!("Bonsai PHI Scrubber — web shell");
     println!("  local:   http://localhost:{port}");
     for ip in local_ips() {
         println!("  phone:   http://{ip}:{port}   (same Wi-Fi / hotspot)");

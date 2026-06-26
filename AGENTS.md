@@ -1,4 +1,4 @@
-# AGENTS.md — Operating manual for the Airplane Mode build loop
+# AGENTS.md — Operating manual for the Bonsai PHI Scrubber build loop
 
 This repo is built by a **harnessed loop**, not one big session. You (a coding agent in Codex or Claude Code) pull the next unblocked task from `backlog/`, do exactly that task, run the gates, commit, and stop. The filesystem and git are the memory and the system of record. A human (Jai) reviews at milestone boundaries.
 

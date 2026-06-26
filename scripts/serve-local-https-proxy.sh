@@ -34,7 +34,7 @@ local_ips() {
 if [[ ! -f "$CA_KEY" || ! -f "$CA_CERT" ]]; then
   openssl req -x509 -newkey rsa:2048 -days 825 -nodes \
     -keyout "$CA_KEY" -out "$CA_CERT" \
-    -subj "/CN=Airplane Mode Local Dev CA" >/dev/null 2>&1
+    -subj "/CN=Bonsai PHI Scrubber Local Dev CA" >/dev/null 2>&1
 fi
 
 {
@@ -66,7 +66,7 @@ openssl x509 -req -days 825 \
   -in "$SERVER_CSR" -CA "$CA_CERT" -CAkey "$CA_KEY" -CAcreateserial \
   -out "$SERVER_CERT" -extensions v3_req -extfile "$SAN_FILE" >/dev/null 2>&1
 
-echo "Airplane Mode local HTTPS proxy"
+echo "Bonsai PHI Scrubber local HTTPS proxy"
 echo "  upstream: $UPSTREAM"
 echo "  local:    https://localhost:$PORT"
 for ip in $(local_ips); do

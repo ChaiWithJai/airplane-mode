@@ -25,7 +25,7 @@ Cloudflare HTTPS can help with **non-PHI capability testing**:
 - avoid the local-LAN HTTP secure-context problem for a browser GPU probe.
 
 However, because we cannot assume a Cloudflare BAA is available, Cloudflare must
-not become part of the Airplane Mode sensitive workflow. Prefer local HTTPS for
+not become part of the Bonsai PHI Scrubber sensitive workflow. Prefer local HTTPS for
 our own app and use external services only to test generic browser capability.
 
 If a tunnel is used at all, it must be restricted to the separate
@@ -55,7 +55,7 @@ should be local HTTPS, not a public tunnel.
 
 ## What Cloudflare HTTPS Must Not Do In This Demo
 
-Do **not** put the full Airplane Mode web app behind a public tunnel for notes,
+Do **not** put the full Bonsai PHI Scrubber web app behind a public tunnel for notes,
 dictation, `/api/scrub`, `/api/send`, or `/api/trajectory`.
 
 That would send the raw-note workflow or clean-record workflow through a cloud
@@ -141,7 +141,7 @@ Before real PHI:
 
 Until then, the safe statement is:
 
-> Airplane Mode is a synthetic, verifier-gated reference architecture. Cloudflare
+> Bonsai PHI Scrubber is a synthetic, verifier-gated reference architecture. Cloudflare
 > is not in the sensitive workflow. Browser secure-context testing should use
 > local HTTPS for the app, and optional public capability probes must never carry
 > notes, Slack records, or trajectories.

@@ -217,6 +217,15 @@ curl http://192.168.1.88:8099/api/status | jq '{slack:.slack, model:.model}'
 
 ## Worked Example 1: Sample Note to Slack
 
+The live path is easiest to explain as four screens:
+
+| Screen | Artifact | What to say in a demo |
+| --- | --- | --- |
+| Capture | ![Synthetic note capture screen](screenshots/01-capture.png) | "The raw synthetic note starts in our first-party UI. For today's web build, the phone is capture and the laptop is the edge node." |
+| Verifier gate | ![Verifier gate screen](screenshots/02-verifier-gate.png) | "The model is not trusted raw. The Rust verifier re-scans the outbound payload and defaults to deny until residual identifiers are zero." |
+| Slack delivery | ![Slack delivery screen](screenshots/03-slack-delivery.png) | "Slack sees only a scrubbed care record. If Slack does not acknowledge, the local trajectory is not stored." |
+| Pack reveal | ![Declarative pack reveal screen](screenshots/04-pack-reveal.png) | "A hackathon team extends this by changing a pack, not by editing the trust core." |
+
 Input note:
 
 ```text

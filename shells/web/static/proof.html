@@ -10,6 +10,9 @@
   p{margin:0 0 18px;color:#6d6558;line-height:1.45}
   .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin:18px 0}
   .card{border:1px solid #ded6c8;background:#fff;border-radius:8px;padding:14px}
+  .links{display:grid;gap:8px;margin-top:10px}
+  .phoneLink{display:block;border:1px solid #d8cfbf;background:#f8f3e8;border-radius:8px;padding:12px 14px;text-decoration:none;color:#242019;font-weight:800;overflow-wrap:anywhere}
+  .phoneLink strong{display:block;font-size:11px;text-transform:uppercase;color:#756b5d;margin-bottom:4px}
   .label{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:#877b68;font-weight:800}
   .value{font-size:18px;font-weight:800;margin-top:5px}
   .ok{color:#28784a}.warn{color:#a16600}.bad{color:#aa352b}
@@ -32,7 +35,7 @@
 
   <div class="card">
     <div class="label">Open on phone</div>
-    <pre id="phoneUrl"></pre>
+    <div id="phoneUrl" class="links"></div>
   </div>
 
   <div class="card">
@@ -68,6 +71,12 @@ function phoneUrls(data){
   ]);
   return urls.length ? urls : [currentOrigin() + '/'];
 }
+function renderPhoneUrls(urls){
+  return urls.map(url=>{
+    const label = url.includes('/proof') || url.endsWith('/p') ? 'Proof' : (url.startsWith('https:') ? 'Demo HTTPS' : 'Demo HTTP');
+    return `<a class="phoneLink" href="${esc(url)}" target="_blank" rel="noopener"><strong>${esc(label)}</strong>${esc(url)}</a>`;
+  }).join('');
+}
 function commandText(){
   const origin = currentOrigin();
   return `AIRPLANE_WEB_URL=${origin} ./run.sh phone-observe\nAIRPLANE_WEB_URL=${origin} ./run.sh phone-request-observe\nAIRPLANE_WEB_URL=${origin} ./run.sh browser-span-smoke`;
@@ -99,7 +108,7 @@ async function postProofHeartbeat(label='proof'){
 async function refresh(){
   const res = await fetch('/api/status', {cache:'no-store'});
   const data = await res.json();
-  $('phoneUrl').textContent = phoneUrls(data).join('\n');
+  $('phoneUrl').innerHTML = renderPhoneUrls(phoneUrls(data));
   $('commands').textContent = commandText();
   $('raw').textContent = JSON.stringify(data, null, 2);
 

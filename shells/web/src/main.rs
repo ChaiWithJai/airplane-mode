@@ -1400,8 +1400,8 @@ fn main() -> Result<()> {
                 let _ =
                     req.respond(tiny_http::Response::from_string(html).with_header(html_header));
             }
-            ("GET", "/proof") => {
-                observe_browser_request(&req, "GET", "/proof", "proof", None);
+            ("GET", "/proof" | "/p") => {
+                observe_browser_request(&req, "GET", path.as_str(), "proof", None);
                 let html = std::fs::read_to_string(PROOF)
                     .unwrap_or_else(|_| "<h1>proof.html missing</h1>".into());
                 let _ =

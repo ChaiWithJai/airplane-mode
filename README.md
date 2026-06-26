@@ -173,7 +173,8 @@ To watch for a real iPhone consuming the app/runtime/model routes, run:
 AIRPLANE_WEB_URL=https://<mac-lan-ip>:8443 ./run.sh phone-request-observe
 ```
 
-You can also open `https://<mac-lan-ip>:8443/proof` on the laptop during a demo.
+You can also open `https://<mac-lan-ip>:8443/proof` or the short
+`https://<mac-lan-ip>:8443/p` on the laptop during a demo.
 It refreshes `/api/status` and shows Slack/model health, active phone capability,
 recent PHI-free browser requests, and the current phone URLs detected from the
 edge server.

@@ -399,11 +399,11 @@ the probe completes. That avoids a false negative where an iPhone loads the page
 but Safari stalls or rejects `navigator.gpu.requestAdapter()` before
 `/api/client-capability` receives anything.
 
-For live demos, open `/proof` on the laptop. It is a PHI-free operator view over
-`/api/status`: Slack health, local model health, latest phone capability, and
-recent browser-surface requests. It also prints the current phone URLs from the
-edge server's LAN interfaces. It is deliberately separate from the scrub flow so
-proof gathering cannot capture note text.
+For live demos, open `/proof` or the short alias `/p` on the laptop. It is a
+PHI-free operator view over `/api/status`: Slack health, local model health,
+latest phone capability, and recent browser-surface requests. It also prints the
+current phone URLs from the edge server's LAN interfaces. It is deliberately
+separate from the scrub flow so proof gathering cannot capture note text.
 
 Opening `/proof` from the phone also posts a PHI-free capability heartbeat, so it
 can satisfy both proof channels: active `/api/client-capability` telemetry and

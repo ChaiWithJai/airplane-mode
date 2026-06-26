@@ -405,6 +405,10 @@ recent browser-surface requests. It also prints the current phone URLs from the
 edge server's LAN interfaces. It is deliberately separate from the scrub flow so
 proof gathering cannot capture note text.
 
+Opening `/proof` from the phone also posts a PHI-free capability heartbeat, so it
+can satisfy both proof channels: active `/api/client-capability` telemetry and
+passive `/api/status.browser_requests` telemetry.
+
 ## Optimal Path From Here
 
 ### Step 1: Keep The Current Demo Stable

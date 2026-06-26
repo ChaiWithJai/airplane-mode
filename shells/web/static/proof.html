@@ -72,6 +72,30 @@ function commandText(){
   const origin = currentOrigin();
   return `AIRPLANE_WEB_URL=${origin} ./run.sh phone-observe\nAIRPLANE_WEB_URL=${origin} ./run.sh phone-request-observe\nAIRPLANE_WEB_URL=${origin} ./run.sh browser-span-smoke`;
 }
+function webglAvailable(kind){
+  try{
+    const canvas=document.createElement('canvas');
+    return !!canvas.getContext(kind, {failIfMajorPerformanceCaveat:false});
+  }catch(_){ return false; }
+}
+async function postProofHeartbeat(label='proof'){
+  const cap = {
+    user_agent:navigator.userAgent || '',
+    platform:navigator.platform || '',
+    language:navigator.language || '',
+    webgpu:!!navigator.gpu,
+    webgl:webglAvailable('webgl') || webglAvailable('experimental-webgl'),
+    webgl2:webglAvailable('webgl2'),
+    webgpu_error: window.isSecureContext ? '' : 'page is not a secure context',
+    browser_model:{status:label,detail:'proof page heartbeat',model:'onnx-community/Bonsai-1.7B-ONNX'},
+    hardware_concurrency:navigator.hardwareConcurrency || 0,
+    device_memory:navigator.deviceMemory || 0,
+    screen:{width:screen.width||0,height:screen.height||0,dpr:devicePixelRatio||1}
+  };
+  try{
+    await fetch('/api/client-capability',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(cap),keepalive:true});
+  }catch(_){}
+}
 async function refresh(){
   const res = await fetch('/api/status', {cache:'no-store'});
   const data = await res.json();
@@ -102,6 +126,9 @@ async function refresh(){
     <td>${esc(r.range)}</td><td>${esc(r.artifact_bytes)}</td><td>${esc(r.user_agent)}</td>
   </tr>`).join('') : '<tr><td colspan="7">No browser requests observed on this server process.</td></tr>';
 }
+postProofHeartbeat('proof-boot');
+window.addEventListener('pageshow',()=>postProofHeartbeat('proof-pageshow'));
+document.addEventListener('visibilitychange',()=>{ if(!document.hidden) postProofHeartbeat('proof-visible'); });
 refresh().catch(err=>{$('raw').textContent=String(err)});
 setInterval(()=>refresh().catch(()=>{}), 2000);
 </script>

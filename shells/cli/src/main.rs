@@ -2,7 +2,8 @@
 //!
 //! Same `airplane-core` the iOS app runs, with the **llama-server** adapter for the
 //! `InferenceProvider` port. Verbs:
-//!   airplane eval            reproduce recall/leakage over the golden set -> eval/golden-run.txt
+//!   airplane eval            check recall/leakage against eval/golden-run.txt
+//!   airplane eval --update   refresh eval/golden-run.txt intentionally
 //!   airplane scrub "<text>"  scrub arbitrary text on the CLI
 //!   airplane gates           run the M1 harness gates (pack-blindness, recall, leakage)
 
@@ -15,12 +16,30 @@ use std::path::{Path, PathBuf};
 const DEFAULT_PACK_DIR: &str = "packs/coach-session";
 const GOLDEN_RUN: &str = "eval/golden-run.txt";
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum EvalMode {
+    Check,
+    Update,
+}
+
+fn parse_eval_mode(arg: Option<&str>) -> Option<EvalMode> {
+    match arg {
+        None | Some("--check") => Some(EvalMode::Check),
+        Some("--update") => Some(EvalMode::Update),
+        _ => None,
+    }
+}
+
 fn pack_dir() -> PathBuf {
     std::env::var("PACK")
         .ok()
         .filter(|s| !s.trim().is_empty())
         .map(PathBuf::from)
         .unwrap_or_else(|| PathBuf::from(DEFAULT_PACK_DIR))
+}
+
+fn is_default_pack(path: &Path) -> bool {
+    path == Path::new(DEFAULT_PACK_DIR)
 }
 
 // ---- the llama-server adapter (the InferenceProvider port, CLI side) ----------
@@ -191,32 +210,42 @@ fn run_eval(use_model: bool) -> Result<EvalOutcome> {
     })
 }
 
-fn cmd_eval() -> Result<()> {
-    let out = run_eval(true)?;
-    print!("{}", out.report);
+fn print_misses(out: &EvalOutcome) {
+    if out.score.missed.is_empty() {
+        return;
+    }
+    println!("LEAKS ({}):", out.score.missed.len());
+    for m in &out.score.missed {
+        println!(
+            "  {}  [{}]{}  {}",
+            m.note,
+            m.entity,
+            if m.hard { " HARD" } else { "" },
+            m.text
+        );
+    }
+}
 
-    if !out.score.missed.is_empty() {
-        println!("LEAKS ({}):", out.score.missed.len());
-        for m in &out.score.missed {
-            println!(
-                "  {}  [{}]{}  {}",
-                m.note,
-                m.entity,
-                if m.hard { " HARD" } else { "" },
-                m.text
-            );
-        }
+fn cmd_eval(mode: EvalMode) -> Result<()> {
+    let pack_dir = pack_dir();
+    if mode == EvalMode::Update && !is_default_pack(&pack_dir) {
+        anyhow::bail!(
+            "refusing to update {GOLDEN_RUN} for non-default pack {}; unset PACK to refresh the committed reference target",
+            pack_dir.display()
+        );
     }
 
-    // Write/refresh the committed reproduction target + machine-readable score.
+    let out = run_eval(true)?;
+    print!("{}", out.report);
+    print_misses(&out);
+
+    // Always write the ignored machine-readable score for local inspection.
     std::fs::create_dir_all("eval").ok();
-    std::fs::write(GOLDEN_RUN, &out.report).context("write golden-run.txt")?;
     std::fs::write(
         "eval/last-run.json",
         serde_json::to_string_pretty(&out.score)?,
     )
     .ok();
-    println!("\nwrote {GOLDEN_RUN}");
     if !out.blocked_notes.is_empty() {
         println!(
             "note: gate BLOCKED {} note(s): {:?}",
@@ -224,6 +253,28 @@ fn cmd_eval() -> Result<()> {
             out.blocked_notes
         );
     }
+
+    if mode == EvalMode::Update {
+        std::fs::write(GOLDEN_RUN, &out.report).context("write golden-run.txt")?;
+        println!("\nwrote {GOLDEN_RUN}");
+        return Ok(());
+    }
+
+    if !is_default_pack(&pack_dir) {
+        println!(
+            "\ncustom pack {}; report printed only; {GOLDEN_RUN} is the default-pack reproduction target",
+            pack_dir.display()
+        );
+        return Ok(());
+    }
+
+    let expected = std::fs::read_to_string(GOLDEN_RUN).context("read golden-run.txt")?;
+    if expected != out.report {
+        anyhow::bail!(
+            "{GOLDEN_RUN} mismatch; inspect eval/last-run.json and run `./run.sh eval --update` only if the new report is intentional"
+        );
+    }
+    println!("\n{GOLDEN_RUN} matches");
     Ok(())
 }
 
@@ -337,7 +388,8 @@ fn usage() {
         "airplane — on-device PHI scrubber (CLI shell)\n\
          \n\
          USAGE:\n\
-           airplane eval            reproduce recall/leakage over the golden set\n\
+           airplane eval            check recall/leakage against eval/golden-run.txt\n\
+           airplane eval --update   refresh eval/golden-run.txt intentionally\n\
            airplane scrub \"<text>\"  scrub arbitrary text\n\
            airplane gates           run the harness gates\n\
          \n\
@@ -349,7 +401,13 @@ fn main() {
     let args: Vec<String> = std::env::args().collect();
     let verb = args.get(1).map(|s| s.as_str()).unwrap_or("help");
     let result = match verb {
-        "eval" => cmd_eval(),
+        "eval" => match parse_eval_mode(args.get(2).map(|s| s.as_str())) {
+            Some(mode) => cmd_eval(mode),
+            None => {
+                usage();
+                std::process::exit(2);
+            }
+        },
         "gates" => cmd_gates(),
         "scrub" => match args.get(2) {
             Some(text) => cmd_scrub(text),
@@ -366,5 +424,24 @@ fn main() {
     if let Err(e) = result {
         eprintln!("error: {e:#}");
         std::process::exit(1);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn eval_mode_defaults_to_check_and_update_is_explicit() {
+        assert_eq!(parse_eval_mode(None), Some(EvalMode::Check));
+        assert_eq!(parse_eval_mode(Some("--check")), Some(EvalMode::Check));
+        assert_eq!(parse_eval_mode(Some("--update")), Some(EvalMode::Update));
+        assert_eq!(parse_eval_mode(Some("--write")), None);
+    }
+
+    #[test]
+    fn only_reference_pack_can_update_reference_golden_run() {
+        assert!(is_default_pack(Path::new(DEFAULT_PACK_DIR)));
+        assert!(!is_default_pack(Path::new("packs/my-pack")));
     }
 }

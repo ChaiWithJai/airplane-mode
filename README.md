@@ -29,11 +29,11 @@ git clone https://github.com/ChaiWithJai/airplane-mode && cd airplane-mode
 # 1. get + serve the model (one-time; ~5 min). See docs/model-setup.md for details.
 ./scripts/serve-model.sh            # downloads Ternary-Bonsai-1.7B (Apache-2.0) + serves on :8080
 
-# 2. reproduce the de-identification numbers through the owned Rust core
+# 2. check the committed de-identification numbers through the owned Rust core
 ./run.sh eval
 ```
 
-You should see **rules ∪ Bonsai-1.7B → 100% recall / 0 leakage** on the 20-note synthetic golden set — the same `airplane-core` the demo runs. (Recall and leakage reproduce; exact over-redaction counts may vary slightly across machines — tracked in [issue #12](../../issues/12).) Full setup, including the model footguns, is in **[docs/model-setup.md](docs/model-setup.md)**.
+You should see **rules ∪ Bonsai-1.7B → 100% recall / 0 leakage** on the 21-note synthetic golden set — the same `airplane-core` the demo runs. `./run.sh eval` compares the run to the committed `eval/golden-run.txt`; use `./run.sh eval --update` only when intentionally refreshing that target. Full setup, including the model footguns, is in **[docs/model-setup.md](docs/model-setup.md)**.
 
 > Needs: a Mac (or Linux), the Rust toolchain, and `llama.cpp` (`brew install llama.cpp`). The model is **free under Apache 2.0** from `prism-ml/` on Hugging Face.
 

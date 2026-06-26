@@ -24,6 +24,7 @@ cargo test --all
 cargo clippy --all-targets --all-features -- -D warnings
 cargo test -p airplane-web
 cargo clippy -p airplane-web --all-targets -- -D warnings
+./run.sh eval --check
 ./run.sh gates
 ./scripts/smoke-mcp-cli-parity.sh
 PACK=packs/coach-session MCP_PARITY_LIMIT=1 ./scripts/smoke-mcp-cli-parity.sh
@@ -54,7 +55,7 @@ The current committed eval target is `eval/golden-run.txt`:
 | #9 iOS/R1 | Simulator artifact only; hardware blocked | `shells/ios` Swift package proves choreography only; `docs/ios-shell-scaffold.md` documents non-claims. Real mlx-swift/R1 measurement still requires physical device. |
 | #10 Slack bot-token routing | Code covered; live credential missing | Web sink supports webhook, bot token, channel map, and Keychain lookup; `/api/send` gates the exact outbound Slack content before posting; `/api/scrub` returns redaction entity/layer summaries to the browser without raw matched text; local preflight is currently preview mode. |
 | #11 Manifest/provenance | Structural MVP partial | Manifest/provenance gates exist; no real Sigstore/Fulcio/Rekor cryptographic verification yet. |
-| #12 Determinism | Covered locally | Two full eval runs matched byte-for-byte after stabilizing report fields; golden report now includes precision and 21 notes. |
+| #12 Determinism | Covered locally | `./run.sh eval` / `--check` compares the current report to committed `eval/golden-run.txt`; `--update` is the explicit mutation path. Golden report includes precision and 21 notes. |
 
 ## Reviewer Notes
 

@@ -36,6 +36,11 @@ these files. That matters for browser ML runtimes because large ONNX sidecars
 should be metadata-probeable and range-fetchable instead of behaving like ad hoc
 demo blobs.
 
+For demo proof, `/api/status.browser_requests` exposes a bounded, PHI-free list
+of recent browser-surface requests. It is there to show that a real phone on the
+first-party network consumed the app/runtime/model artifacts without recording
+notes, records, or Slack payloads.
+
 ## What Counts As First-Party
 
 Acceptable demo/adopter paths:

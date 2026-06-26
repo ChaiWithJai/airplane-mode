@@ -167,6 +167,11 @@ Those commands cache Transformers.js and the q1 ONNX artifacts under
 `.airplane/`. They are served back to the phone from this laptop at `/vendor/...`
 and `/models/...`; they are intentionally not committed to git.
 The local server supports `HEAD` and byte ranges for those artifacts.
+To watch for a real iPhone consuming the app/runtime/model routes, run:
+
+```bash
+AIRPLANE_WEB_URL=https://<mac-lan-ip>:8443 ./run.sh phone-request-observe
+```
 
 If you need HTTPS to test browser GPU behavior on a phone, do not tunnel the full
 scrub app through Cloudflare. Use local HTTPS for the real app:

@@ -16,6 +16,7 @@ case "$verb" in
   web)    cargo build -q --bin airplane-web; target/debug/airplane-web ;;
   gpu-probe) shift; ./scripts/serve-gpu-probe.sh "$@" ;;
   phone-observe) shift; ./scripts/wait-phone-capability.sh "$@" ;;
+  phone-request-observe) shift; ./scripts/wait-phone-browser-request.sh "$@" ;;
   https-proxy) shift; ./scripts/serve-local-https-proxy.sh "$@" ;;
   vendor-browser-runtime) shift; ./scripts/vendor-browser-runtime.sh "$@" ;;
   vendor-browser-model) shift; ./scripts/vendor-browser-model.sh "$@" ;;
@@ -33,6 +34,8 @@ Airplane Mode — run.sh   (on-device PHI scrubber; CLI shell over airplane-core
   ./run.sh web             serve the Beat 1 demo UI (default http://localhost:8099, LAN-accessible)
   ./run.sh gpu-probe       serve capability-only GPU probe (safe to tunnel; no notes)
   ./run.sh phone-observe   wait for phone browser capability/model telemetry
+  ./run.sh phone-request-observe
+                            wait for passive iPhone browser request telemetry
   ./run.sh https-proxy     serve local HTTPS proxy for phone secure-context testing
   ./run.sh vendor-browser-runtime
                             download local Transformers.js runtime into .airplane/

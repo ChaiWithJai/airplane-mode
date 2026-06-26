@@ -109,6 +109,7 @@ class Proxy(BaseHTTPRequestHandler):
         body = self.rfile.read(length) if length else None
         path = self.path
         headers = {k: v for k, v in self.headers.items() if k.lower() not in {"host", "connection", "content-length"}}
+        headers["X-Forwarded-For"] = self.client_address[0]
         if body is not None:
             headers["Content-Length"] = str(len(body))
         conn = http.client.HTTPConnection(up.hostname, up.port or 80, timeout=180)

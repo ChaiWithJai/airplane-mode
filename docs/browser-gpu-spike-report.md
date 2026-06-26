@@ -379,6 +379,20 @@ times out with a populated last status and `client_capability: null`, the edge i
 reachable; the phone has simply not refreshed/reported against the current
 server process yet.
 
+There is also passive phone-request telemetry for cases where the browser loads
+the app or artifacts but the JavaScript capability post does not complete:
+
+```bash
+AIRPLANE_WEB_URL=https://192.168.1.88:8443 ./run.sh phone-request-observe
+```
+
+`/api/status.browser_requests` records recent PHI-free browser surface requests:
+route, path, client address, iPhone-like user-agent flag, range header, and
+artifact byte size. It does not record note bodies or API payloads. A real phone
+proof should show a non-local client with `looks_like_iphone: true` requesting
+`/`, `/bonsai-worker.js`, `/vendor/transformers.js`, and ultimately
+`/models/onnx-community/Bonsai-1.7B-ONNX/...`.
+
 ## Optimal Path From Here
 
 ### Step 1: Keep The Current Demo Stable

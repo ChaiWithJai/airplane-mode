@@ -12,7 +12,7 @@ use airplane_core::{
 use anyhow::{Context, Result};
 use serde::Deserialize;
 use serde_json::{json, Value};
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap, HashSet, VecDeque};
 use std::io::{Read, Seek, SeekFrom, Write};
 use std::path::{Path, PathBuf};
 use std::sync::{Mutex, OnceLock};
@@ -29,6 +29,7 @@ const PASSES: u32 = 5;
 const SLACK_WEBHOOK_KEYCHAIN_REF: &str = "slack-webhook-url";
 static ACKED_SEND_IDS: OnceLock<Mutex<HashSet<String>>> = OnceLock::new();
 static CLIENT_CAPABILITY: OnceLock<Mutex<Option<Value>>> = OnceLock::new();
+static BROWSER_REQUESTS: OnceLock<Mutex<VecDeque<Value>>> = OnceLock::new();
 
 fn repo_path(rel: &str) -> PathBuf {
     let direct = PathBuf::from(rel);
@@ -93,6 +94,15 @@ fn request_header(req: &tiny_http::Request, name: &'static str) -> Option<String
         .iter()
         .find(|header| header.field.equiv(name))
         .map(|header| header.value.as_str().to_string())
+}
+
+fn observed_client(req: &tiny_http::Request) -> String {
+    request_header(req, "X-Forwarded-For")
+        .or_else(|| req.remote_addr().map(|addr| addr.to_string()))
+        .unwrap_or_default()
+        .chars()
+        .take(80)
+        .collect()
 }
 
 fn parse_byte_range(value: &str, len: u64) -> Option<(u64, u64)> {
@@ -205,6 +215,51 @@ fn read_file_range(path: &Path, start: u64, end: u64) -> std::io::Result<Vec<u8>
     let mut bytes = vec![0; (end - start + 1) as usize];
     file.read_exact(&mut bytes)?;
     Ok(bytes)
+}
+
+fn browser_request_store() -> &'static Mutex<VecDeque<Value>> {
+    BROWSER_REQUESTS.get_or_init(|| Mutex::new(VecDeque::with_capacity(48)))
+}
+
+fn observe_browser_request(
+    req: &tiny_http::Request,
+    method: &str,
+    path: &str,
+    route: &str,
+    artifact_path: Option<&Path>,
+) {
+    let user_agent = request_header(req, "User-Agent").unwrap_or_default();
+    let range = request_header(req, "Range").unwrap_or_default();
+    let artifact_bytes = artifact_path
+        .and_then(|path| std::fs::metadata(path).ok())
+        .filter(|meta| meta.is_file())
+        .map(|meta| meta.len())
+        .unwrap_or(0);
+    let event = json!({
+        "observed_at": chrono_like_now(),
+        "client": observed_client(req),
+        "method": method,
+        "path": path.chars().take(180).collect::<String>(),
+        "route": route,
+        "user_agent": user_agent.chars().take(240).collect::<String>(),
+        "looks_like_iphone": user_agent.contains("iPhone"),
+        "range": range.chars().take(80).collect::<String>(),
+        "artifact_bytes": artifact_bytes
+    });
+    if let Ok(mut events) = browser_request_store().lock() {
+        if events.len() >= 48 {
+            events.pop_front();
+        }
+        events.push_back(event);
+    }
+}
+
+fn latest_browser_requests() -> Value {
+    browser_request_store()
+        .lock()
+        .map(|events| events.iter().cloned().collect::<Vec<_>>())
+        .map(Value::Array)
+        .unwrap_or_else(|_| json!([]))
 }
 
 fn pack_path() -> PathBuf {
@@ -1322,18 +1377,21 @@ fn main() -> Result<()> {
 
         match (method.as_str(), path.as_str()) {
             ("GET", "/") => {
+                observe_browser_request(&req, "GET", "/", "app", None);
                 let html = std::fs::read_to_string(INDEX)
                     .unwrap_or_else(|_| "<h1>index.html missing</h1>".into());
                 let _ =
                     req.respond(tiny_http::Response::from_string(html).with_header(html_header));
             }
             ("GET", "/gpu") => {
+                observe_browser_request(&req, "GET", "/gpu", "gpu-probe", None);
                 let html = std::fs::read_to_string(GPU_PROBE)
                     .unwrap_or_else(|_| "<h1>gpu.html missing</h1>".into());
                 let _ =
                     req.respond(tiny_http::Response::from_string(html).with_header(html_header));
             }
             ("GET", "/bonsai-worker.js") => {
+                observe_browser_request(&req, "GET", "/bonsai-worker.js", "worker", None);
                 let js = std::fs::read_to_string(BONSAI_WORKER).unwrap_or_else(|_| {
                     "postMessage({status:'error',detail:'worker missing'});".into()
                 });
@@ -1349,6 +1407,7 @@ fn main() -> Result<()> {
                     continue;
                 }
                 let vendor_path = repo_path(BROWSER_VENDOR_DIR).join(name);
+                observe_browser_request(&req, method, path, "vendor", Some(&vendor_path));
                 let header = if name.ends_with(".wasm") {
                     wasm_header
                 } else {
@@ -1372,6 +1431,7 @@ fn main() -> Result<()> {
                     continue;
                 };
                 let model_path = repo_path(BROWSER_MODEL_DIR).join(rel_path);
+                observe_browser_request(&req, method, path, "model", Some(&model_path));
                 serve_static_artifact(
                     req,
                     method,
@@ -1390,7 +1450,8 @@ fn main() -> Result<()> {
                     "ok": true,
                     "slack": slack_status(),
                     "model": model_status(),
-                    "client_capability": latest_client_capability()
+                    "client_capability": latest_client_capability(),
+                    "browser_requests": latest_browser_requests()
                 })
                 .to_string();
                 let _ =
@@ -1476,6 +1537,44 @@ mod tests {
         assert_eq!(parse_byte_range("bytes=-10", 100), Some((90, 99)));
         assert_eq!(parse_byte_range("bytes=100-101", 100), None);
         assert_eq!(parse_byte_range("items=0-1", 100), None);
+    }
+
+    #[test]
+    fn passive_browser_request_observation_is_phi_free() {
+        let _guard = TRAJECTORY_TEST_LOCK.lock().unwrap();
+        if let Ok(mut events) = browser_request_store().lock() {
+            events.clear();
+        }
+        let artifact = std::env::temp_dir().join("airplane-browser-artifact-test.bin");
+        std::fs::write(&artifact, b"abcde").unwrap();
+        let req: tiny_http::Request = tiny_http::TestRequest::new()
+            .with_remote_addr("127.0.0.1:12345".parse().unwrap())
+            .with_header(
+                tiny_http::Header::from_bytes(&b"X-Forwarded-For"[..], &b"192.168.1.44"[..])
+                    .unwrap(),
+            )
+            .with_header(
+                tiny_http::Header::from_bytes(&b"User-Agent"[..], &b"Mobile Safari iPhone"[..])
+                    .unwrap(),
+            )
+            .with_header(tiny_http::Header::from_bytes(&b"Range"[..], &b"bytes=0-1"[..]).unwrap())
+            .into();
+        observe_browser_request(
+            &req,
+            "GET",
+            "/models/onnx-community/Bonsai-1.7B-ONNX/onnx/model_q1.onnx_data",
+            "model",
+            Some(&artifact),
+        );
+        let events = latest_browser_requests();
+        let event = events.as_array().unwrap().last().unwrap();
+        assert_eq!(event["client"], "192.168.1.44");
+        assert_eq!(event["route"], "model");
+        assert_eq!(event["looks_like_iphone"], true);
+        assert_eq!(event["range"], "bytes=0-1");
+        assert_eq!(event["artifact_bytes"], 5);
+        assert!(event.get("body").is_none());
+        let _ = std::fs::remove_file(artifact);
     }
 
     fn isolated_trajectory_store(name: &str) -> PathBuf {

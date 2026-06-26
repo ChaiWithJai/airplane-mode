@@ -470,7 +470,7 @@ fn client_capability_store() -> &'static Mutex<Option<Value>> {
     CLIENT_CAPABILITY.get_or_init(|| Mutex::new(None))
 }
 
-fn sanitize_client_capability(input: &Value) -> Value {
+fn sanitize_client_capability(input: &Value, observed_from: Option<&str>) -> Value {
     let truncate = |key: &str, limit: usize| -> String {
         input[key]
             .as_str()
@@ -481,6 +481,7 @@ fn sanitize_client_capability(input: &Value) -> Value {
     };
     json!({
         "reported_at": chrono_like_now(),
+        "observed_from": observed_from.unwrap_or("").chars().take(80).collect::<String>(),
         "user_agent": truncate("user_agent", 240),
         "platform": truncate("platform", 80),
         "language": truncate("language", 32),
@@ -512,12 +513,12 @@ fn chrono_like_now() -> String {
     format!("{:?}", std::time::SystemTime::now())
 }
 
-fn handle_client_capability(body: &str) -> Value {
+fn handle_client_capability(body: &str, observed_from: Option<String>) -> Value {
     let input: Value = match serde_json::from_str(body) {
         Ok(v) => v,
         Err(e) => return json!({"ok": false, "error": format!("parse request body: {e}")}),
     };
-    let payload = sanitize_client_capability(&input);
+    let payload = sanitize_client_capability(&input, observed_from.as_deref());
     eprintln!("client-capability: {payload}");
     if let Ok(mut slot) = client_capability_store().lock() {
         *slot = Some(payload.clone());
@@ -1095,7 +1096,8 @@ fn main() -> Result<()> {
             ("POST", "/api/client-capability") => {
                 let mut body = String::new();
                 let _ = req.as_reader().read_to_string(&mut body);
-                let payload = handle_client_capability(&body).to_string();
+                let observed_from = req.remote_addr().map(|addr| addr.to_string());
+                let payload = handle_client_capability(&body, observed_from).to_string();
                 let _ =
                     req.respond(tiny_http::Response::from_string(payload).with_header(json_header));
             }
@@ -1309,10 +1311,11 @@ credentials:
             "device_memory": 4,
             "screen": {"width": 390, "height": 844, "dpr": 3}
         });
-        let out = sanitize_client_capability(&raw);
+        let out = sanitize_client_capability(&raw, Some("192.168.1.44:55555"));
         assert_eq!(out["webgpu"], true);
         assert_eq!(out["webgl2"], true);
         assert_eq!(out["platform"], "iPhone");
+        assert_eq!(out["observed_from"], "192.168.1.44:55555");
         assert_eq!(out["screen"]["width"], 390);
         assert_eq!(out["user_agent"].as_str().unwrap().len(), 240);
         assert_eq!(out["browser_model"]["status"], "complete");

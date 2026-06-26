@@ -154,6 +154,10 @@ Implemented:
 
 - `POST /api/client-capability`
 - `/api/status` now includes `client_capability`
+- `./run.sh phone-observe` waits for the phone browser to report sanitized
+  capability/model telemetry and writes `.airplane/phone-capability-latest.json`
+- server-side capability telemetry includes `observed_from`, the remote LAN
+  address that posted the report
 - phone UI shows a Browser inference probe card
 - phone UI can select `Mac edge` or `Browser GPU`
 - selecting `Browser GPU` attempts a local q1 Bonsai span-generation probe with
@@ -211,6 +215,17 @@ The live server was then reprofiled after the worker route was added:
 | `/api/send` | 0.27s, Slack accepted |
 | `/api/trajectory` | 0.04s, gate-clean trajectory stored as `local-000007` |
 
+After adding server-side phone observation telemetry and restarting the web
+shell, the same endpoint flow was reprofiled:
+
+| Step | Result |
+| --- | --- |
+| `/api/status` | model reachable, Slack configured, `client_capability: null` until phone refresh |
+| `./run.sh phone-observe` | timed out after 12s because the phone had not refreshed the new server process |
+| `/api/scrub` with `backend: browser-gpu` | 10.89s, `gate_pass: true`, `residual_count: 0`, 4 redactions |
+| `/api/send` | 0.94s, Slack accepted |
+| `/api/trajectory` | 0.04s, gate-clean trajectory stored as `local-000008` |
+
 The scrub result caught:
 
 - `PERSON` via Bonsai
@@ -229,9 +244,26 @@ macOS sees the paired phone:
 Lakshmi, iPhone12,3, available (paired)
 ```
 
-Remote Safari launch through `devicectl` was blocked because Developer Mode is
-disabled. That does not block the demo. It only means phone observation must come
-through server telemetry unless Developer Mode is enabled.
+Remote Safari launch through `devicectl` was attempted:
+
+```bash
+xcrun devicectl device process launch \
+  --device Lakshmi \
+  com.apple.mobilesafari \
+  --payload-url http://192.168.1.88:8099/ \
+  --activate
+```
+
+It failed with CoreDevice error `10005`: Developer Mode is disabled. That does
+not block the demo. It means phone observation comes through server telemetry:
+
+```bash
+./run.sh phone-observe
+```
+
+Then open or refresh `http://192.168.1.88:8099` on the phone. A successful
+observation writes `.airplane/phone-capability-latest.json`; until then
+`/api/status` correctly reports `client_capability: null`.
 
 ## Optimal Path From Here
 

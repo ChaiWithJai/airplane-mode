@@ -15,6 +15,7 @@ case "$verb" in
   gates-fast) build; "$BIN" gates-fast; ./scripts/smoke-ethical-gate-fixtures.sh --bin "$BIN" ;;
   web)    cargo build -q --bin airplane-web; target/debug/airplane-web ;;
   gpu-probe) shift; ./scripts/serve-gpu-probe.sh "$@" ;;
+  phone-observe) shift; ./scripts/wait-phone-capability.sh "$@" ;;
   https-proxy) shift; ./scripts/serve-local-https-proxy.sh "$@" ;;
   mcp)    cargo build -q --bin airplane-mcp; target/debug/airplane-mcp ;;
   ios-sim) (cd shells/ios && swift test && swift build) ;;
@@ -28,6 +29,7 @@ Airplane Mode — run.sh   (on-device PHI scrubber; CLI shell over airplane-core
   ./run.sh gates-fast      run no-model policy/provenance gates for fast iteration
   ./run.sh web             serve the Beat 1 demo UI (default http://localhost:8099, LAN-accessible)
   ./run.sh gpu-probe       serve capability-only GPU probe (safe to tunnel; no notes)
+  ./run.sh phone-observe   wait for phone browser capability/model telemetry
   ./run.sh https-proxy     serve local HTTPS proxy for phone secure-context testing
   ./run.sh mcp             start the stdio MCP shell (agent-callable scrub tool)
   ./run.sh ios-sim         verify the simulator-safe iOS shell scaffold (no hardware proof)
@@ -39,6 +41,7 @@ Bound model requests:           AIRPLANE_MODEL_TIMEOUT_SECS=120 ./run.sh gates
 Bound Slack sends:              AIRPLANE_SLACK_TIMEOUT_SECS=15 ./run.sh web
 Use a different pack:           PACK=packs/my-pack ./run.sh gates
 Phone demo server:              ./run.sh web
+Phone observation:              AIRPLANE_WEB_URL=http://127.0.0.1:8099 ./run.sh phone-observe
 Slack smoke target:             AIRPLANE_WEB_URL=http://127.0.0.1:8099 ./run.sh slack-smoke
 EOF
   ;;

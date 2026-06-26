@@ -91,29 +91,33 @@ By default the record shows as a **preview**. To make it actually land in a Slac
 
 ### Fast path: incoming webhook
 
-1. Go to **https://api.slack.com/apps** → **Create New App** → **From scratch** → name it "Airplane Mode", pick your workspace.
-2. **Incoming Webhooks** → toggle **On** → **Add New Webhook to Workspace** → choose the channel (e.g. `#coach-records`) → **Allow** → copy the URL (`https://hooks.slack.com/services/...`).
-3. Restart the web server with the URL in the environment:
+1. Follow Slack's current incoming-webhook flow: **Create a Slack app** → **Incoming Webhooks** → toggle **Activate Incoming Webhooks** → **Add New Webhook to Workspace** → choose the channel (e.g. `#coach-records`) → **Allow** → copy the URL (`https://hooks.slack.com/services/...`). Slack's docs: <https://docs.slack.dev/messaging/sending-messages-using-incoming-webhooks>.
+2. Store the URL in Keychain:
    ```bash
-   SLACK_WEBHOOK_URL='https://hooks.slack.com/services/XXX/YYY/ZZZ' ./run.sh web
+   security add-generic-password -a "$USER" -s slack-webhook-url -w 'https://hooks.slack.com/services/XXX/YYY/ZZZ'
+   AIRPLANE_WEB_ADDR=127.0.0.1:8099 ./run.sh web
    ```
-   On startup it prints `slack: SLACK_WEBHOOK_URL set — records post for real`.
-4. Run the demo. When the queue flushes, the **de-identified record posts to that Slack channel for real** — no name, no member ID. Open Slack on the big screen and evaluate it.
+   Or restart the web server with the URL in the environment:
+   ```bash
+   SLACK_WEBHOOK_URL='https://hooks.slack.com/services/XXX/YYY/ZZZ' AIRPLANE_WEB_ADDR=127.0.0.1:8099 ./run.sh web
+   ```
+   On startup it prints `slack: webhook configured — records post for real`.
+3. Run the demo. When the queue flushes, the **de-identified record posts to that Slack channel for real** — no name, no member ID. Open Slack on the big screen and evaluate it.
 
 ### Pack-routed path: bot token + channel map
 
 Use this when you want the channel to come from `packs/coach-session/sink.yaml` (`channelMap.default`), or when incoming webhooks are not available.
 
-1. Create or use a Slack app with `chat:write`.
+1. Create or use a Slack app with `chat:write`. Slack's docs: <https://docs.slack.dev/messaging/sending-and-scheduling-messages> and <https://docs.slack.dev/reference/scopes/chat.write>.
 2. Install it into the workspace and copy the bot token (`xoxb-...`).
 3. Either pass it in the environment:
    ```bash
-   SLACK_BOT_TOKEN='xoxb-...' SLACK_CHANNEL='#coach-records' ./run.sh web
+   SLACK_BOT_TOKEN='xoxb-...' SLACK_CHANNEL='#coach-records' AIRPLANE_WEB_ADDR=127.0.0.1:8099 ./run.sh web
    ```
    Or put it in Keychain under the pack's configured ref:
    ```bash
    security add-generic-password -a "$USER" -s slack-bot-token -w 'xoxb-...'
-   ./run.sh web
+   AIRPLANE_WEB_ADDR=127.0.0.1:8099 ./run.sh web
    ```
    If `SLACK_CHANNEL` is absent, the sink routes to `channelMap.default` in `sink.yaml`.
 4. On startup it prints `slack: SLACK_BOT_TOKEN set — records post to #coach-records`.

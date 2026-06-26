@@ -66,7 +66,11 @@ pub fn score_note(predicted: &[Span], expected: &Expected, acc: &mut Score) {
     }
     // Over-redaction: a predicted span overlapping no label (recall-first: reported, not gated).
     for p in predicted {
-        if !expected.redactions.iter().any(|e| matches(&p.text, &e.text)) {
+        if !expected
+            .redactions
+            .iter()
+            .any(|e| matches(&p.text, &e.text))
+        {
             acc.over_redactions += 1;
         }
     }
@@ -105,8 +109,16 @@ mod tests {
             id: "note-01".into(),
             clean: false,
             redactions: vec![
-                ExpectedSpan { text: "Maria Alvarez".into(), entity: "PERSON".into(), hard: true },
-                ExpectedSpan { text: "CM-204815".into(), entity: "MEMBER_ID".into(), hard: false },
+                ExpectedSpan {
+                    text: "Maria Alvarez".into(),
+                    entity: "PERSON".into(),
+                    hard: true,
+                },
+                ExpectedSpan {
+                    text: "CM-204815".into(),
+                    entity: "MEMBER_ID".into(),
+                    hard: false,
+                },
             ],
         };
         let mut acc = Score::default();

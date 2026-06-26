@@ -4,7 +4,7 @@ sequence: 1
 previousSequence: 0
 current:
   core: 0.1.0
-  model: ternary-bonsai-1.7b@local-gguf
+  model: ternary-bonsai-1.7b@sha256:00be231b1ba8ab8b45db35d288f897fa9b5836bb6ad41762b759b6bc990b4fea
   pack: coach-session@1.0.0
 revoked:
   - pack: coach-session@0.9.0

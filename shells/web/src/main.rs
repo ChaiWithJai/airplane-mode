@@ -20,6 +20,7 @@ const DEFAULT_PACK_DIR: &str = "packs/coach-session";
 const INDEX: &str = "shells/web/static/index.html";
 const DEFAULT_ADDR: &str = "0.0.0.0:8088";
 const PASSES: u32 = 5;
+const SLACK_WEBHOOK_KEYCHAIN_REF: &str = "slack-webhook-url";
 
 fn repo_path(rel: &str) -> PathBuf {
     let direct = PathBuf::from(rel);
@@ -369,6 +370,13 @@ fn slack_bot_token(config: &SinkConfig) -> Option<String> {
         .or_else(|| keychain_secret(config.credentials.keychain_ref()))
 }
 
+fn slack_webhook_url() -> Option<String> {
+    std::env::var("SLACK_WEBHOOK_URL")
+        .ok()
+        .filter(|s| !s.trim().is_empty())
+        .or_else(|| keychain_secret(SLACK_WEBHOOK_KEYCHAIN_REF))
+}
+
 fn slack_status() -> Value {
     let config = match load_sink_config() {
         Ok(c) => c,
@@ -377,11 +385,7 @@ fn slack_status() -> Value {
         }
     };
     let channel = slack_channel(&config);
-    if std::env::var("SLACK_WEBHOOK_URL")
-        .ok()
-        .filter(|s| !s.trim().is_empty())
-        .is_some()
-    {
+    if slack_webhook_url().is_some() {
         return json!({"configured": true, "route": "webhook", "channel": channel});
     }
     if slack_bot_token(&config).is_some() {
@@ -502,10 +506,7 @@ fn slack_outbound_text(record: &Value) -> String {
 fn slack_post(record: &Value) -> Result<()> {
     let config = load_sink_config()?;
     let blocks = slack_blocks(record);
-    if let Some(webhook) = std::env::var("SLACK_WEBHOOK_URL")
-        .ok()
-        .filter(|s| !s.trim().is_empty())
-    {
+    if let Some(webhook) = slack_webhook_url() {
         let payload = json!({ "blocks": blocks });
         ureq::post(&webhook)
             .send_json(payload)
@@ -794,17 +795,23 @@ fn main() -> Result<()> {
         println!("  phone:   http://{ip}:{port}   (same Wi-Fi / hotspot)");
     }
     println!("  needs the model:  ./scripts/serve-model.sh");
-    match std::env::var("SLACK_WEBHOOK_URL") {
-        Ok(_) => println!("  slack:   SLACK_WEBHOOK_URL set — records post for real"),
-        Err(_) if std::env::var("SLACK_BOT_TOKEN").is_ok() => {
-            let route = load_sink_config()
-                .map(|c| slack_channel(&c))
-                .unwrap_or_else(|_| "#coach-records".to_string());
-            println!("  slack:   SLACK_BOT_TOKEN set — records post to {route}")
+    if slack_webhook_url().is_some() {
+        println!("  slack:   webhook configured — records post for real");
+    } else if std::env::var("SLACK_BOT_TOKEN").is_ok() {
+        let route = load_sink_config()
+            .map(|c| slack_channel(&c))
+            .unwrap_or_else(|_| "#coach-records".to_string());
+        println!("  slack:   SLACK_BOT_TOKEN set — records post to {route}")
+    } else {
+        match load_sink_config() {
+            Ok(config) if slack_bot_token(&config).is_some() => {
+                let route = slack_channel(&config);
+                println!("  slack:   Keychain bot token set — records post to {route}")
+            }
+            _ => println!(
+                "  slack:   NOT set — export SLACK_WEBHOOK_URL or SLACK_BOT_TOKEN, or add Keychain slack-webhook-url / slack-bot-token"
+            ),
         }
-        Err(_) => println!(
-            "  slack:   NOT set — export SLACK_WEBHOOK_URL or SLACK_BOT_TOKEN to post for real"
-        ),
     }
 
     for mut req in server.incoming_requests() {

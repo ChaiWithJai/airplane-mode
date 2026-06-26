@@ -12,9 +12,10 @@ use airplane_core::{
 use anyhow::{Context, Result};
 use serde::Deserialize;
 use serde_json::{json, Value};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::io::Write;
 use std::path::{Path, PathBuf};
+use std::sync::{Mutex, OnceLock};
 use std::time::{Duration, Instant};
 
 const DEFAULT_PACK_DIR: &str = "packs/coach-session";
@@ -22,6 +23,7 @@ const INDEX: &str = "shells/web/static/index.html";
 const DEFAULT_ADDR: &str = "0.0.0.0:8099";
 const PASSES: u32 = 5;
 const SLACK_WEBHOOK_KEYCHAIN_REF: &str = "slack-webhook-url";
+static ACKED_SEND_IDS: OnceLock<Mutex<HashSet<String>>> = OnceLock::new();
 
 fn repo_path(rel: &str) -> PathBuf {
     let direct = PathBuf::from(rel);
@@ -554,6 +556,36 @@ fn slack_outbound_text(record: &Value) -> String {
     parts.join("\n")
 }
 
+fn acked_send_ids() -> &'static Mutex<HashSet<String>> {
+    ACKED_SEND_IDS.get_or_init(|| Mutex::new(HashSet::new()))
+}
+
+fn send_id(input: &Value) -> Option<String> {
+    input["send_id"]
+        .as_str()
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(|s| s.chars().take(80).collect())
+}
+
+fn send_already_acked(id: &str) -> bool {
+    acked_send_ids()
+        .lock()
+        .map(|ids| ids.contains(id))
+        .unwrap_or(false)
+}
+
+fn mark_send_acked(id: Option<&str>) {
+    if let Some(id) = id {
+        if let Ok(mut ids) = acked_send_ids().lock() {
+            if ids.len() > 1024 {
+                ids.clear();
+            }
+            ids.insert(id.to_string());
+        }
+    }
+}
+
 fn slack_post(record: &Value) -> Result<()> {
     let config = load_sink_config()?;
     let blocks = slack_blocks(record);
@@ -608,6 +640,15 @@ fn handle_send(body: &str) -> Value {
         Ok(v) => v,
         Err(e) => return json!({"ok": false, "error": format!("parse request body: {e}")}),
     };
+    let send_id = send_id(&input);
+    if send_id.as_deref().is_some_and(send_already_acked) {
+        eprintln!(
+            "send: duplicate ack replay send_id={} elapsed={:.1}s",
+            send_id.as_deref().unwrap_or(""),
+            started.elapsed().as_secs_f32()
+        );
+        return json!({"ok": true, "deduped": true});
+    }
     let text = slack_outbound_text(&input["record"]);
     if text.trim().is_empty() {
         return json!({"ok": false, "error": "Slack record is empty"});
@@ -630,8 +671,10 @@ fn handle_send(body: &str) -> Value {
     }
     match slack_post(&input["record"]) {
         Ok(()) => {
+            mark_send_acked(send_id.as_deref());
             eprintln!(
-                "send: Slack accepted elapsed={:.1}s",
+                "send: Slack accepted send_id={} elapsed={:.1}s",
+                send_id.as_deref().unwrap_or(""),
                 started.elapsed().as_secs_f32()
             );
             json!({"ok": true})

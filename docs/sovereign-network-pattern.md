@@ -31,6 +31,11 @@ The phone can then fetch `/vendor/transformers.js` and
 node instead of pulling the runtime/model from a public CDN during the sensitive
 workflow.
 
+The local artifact server supports `HEAD`, `Content-Length`, and byte ranges for
+these files. That matters for browser ML runtimes because large ONNX sidecars
+should be metadata-probeable and range-fetchable instead of behaving like ad hoc
+demo blobs.
+
 ## What Counts As First-Party
 
 Acceptable demo/adopter paths:

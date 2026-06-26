@@ -13,7 +13,7 @@ use anyhow::{Context, Result};
 use serde::Deserialize;
 use serde_json::{json, Value};
 use std::collections::{HashMap, HashSet};
-use std::io::Write;
+use std::io::{Read, Seek, SeekFrom, Write};
 use std::path::{Path, PathBuf};
 use std::sync::{Mutex, OnceLock};
 use std::time::{Duration, Instant};
@@ -56,6 +56,24 @@ fn browser_static_header(name: &str) -> tiny_http::Header {
     tiny_http::Header::from_bytes(&b"Content-Type"[..], content_type.as_bytes()).unwrap()
 }
 
+fn content_length_header(len: u64) -> tiny_http::Header {
+    tiny_http::Header::from_bytes(&b"Content-Length"[..], len.to_string().as_bytes()).unwrap()
+}
+
+fn accept_ranges_header() -> tiny_http::Header {
+    tiny_http::Header::from_bytes(&b"Accept-Ranges"[..], &b"bytes"[..]).unwrap()
+}
+
+fn content_range_header(start: u64, end: u64, total: u64) -> tiny_http::Header {
+    let value = format!("bytes {start}-{end}/{total}");
+    tiny_http::Header::from_bytes(&b"Content-Range"[..], value.as_bytes()).unwrap()
+}
+
+fn unsatisfied_content_range_header(total: u64) -> tiny_http::Header {
+    let value = format!("bytes */{total}");
+    tiny_http::Header::from_bytes(&b"Content-Range"[..], value.as_bytes()).unwrap()
+}
+
 fn safe_relative_path(path: &str) -> Option<PathBuf> {
     if path.is_empty() || path.starts_with('/') || path.contains('\\') {
         return None;
@@ -68,6 +86,125 @@ fn safe_relative_path(path: &str) -> Option<PathBuf> {
         out.push(part);
     }
     Some(out)
+}
+
+fn request_header(req: &tiny_http::Request, name: &'static str) -> Option<String> {
+    req.headers()
+        .iter()
+        .find(|header| header.field.equiv(name))
+        .map(|header| header.value.as_str().to_string())
+}
+
+fn parse_byte_range(value: &str, len: u64) -> Option<(u64, u64)> {
+    let range = value.strip_prefix("bytes=")?.trim();
+    let (start, end) = range.split_once('-')?;
+    if start.is_empty() {
+        let suffix_len = end.parse::<u64>().ok()?;
+        if suffix_len == 0 {
+            return None;
+        }
+        let start = len.saturating_sub(suffix_len);
+        return Some((start, len.saturating_sub(1)));
+    }
+    let start = start.parse::<u64>().ok()?;
+    let end = if end.is_empty() {
+        len.saturating_sub(1)
+    } else {
+        end.parse::<u64>().ok()?
+    };
+    if len == 0 || start >= len || start > end {
+        return None;
+    }
+    Some((start, end.min(len - 1)))
+}
+
+fn serve_static_artifact(
+    req: tiny_http::Request,
+    method: &str,
+    path: &Path,
+    content_type: tiny_http::Header,
+    missing_message: &str,
+) {
+    match std::fs::metadata(path) {
+        Ok(meta) if meta.is_file() => {
+            let len = meta.len();
+            let range_header = request_header(&req, "Range");
+            let range = range_header
+                .as_deref()
+                .and_then(|value| parse_byte_range(value, len));
+            if range_header.is_some() && range.is_none() {
+                let _ = req.respond(
+                    tiny_http::Response::empty(416)
+                        .with_header(accept_ranges_header())
+                        .with_header(unsatisfied_content_range_header(len)),
+                );
+                return;
+            }
+            if method == "HEAD" {
+                let mut response =
+                    tiny_http::Response::empty(if range.is_some() { 206 } else { 200 })
+                        .with_chunked_threshold(usize::MAX)
+                        .with_header(content_type)
+                        .with_header(accept_ranges_header());
+                if let Some((start, end)) = range {
+                    response = response
+                        .with_header(content_range_header(start, end, len))
+                        .with_header(content_length_header(end - start + 1));
+                } else {
+                    response = response.with_header(content_length_header(len));
+                }
+                let _ = req.respond(response);
+                return;
+            }
+            if let Some((start, end)) = range {
+                match read_file_range(path, start, end) {
+                    Ok(bytes) => {
+                        let _ = req.respond(
+                            tiny_http::Response::from_data(bytes)
+                                .with_status_code(206)
+                                .with_header(content_type)
+                                .with_header(accept_ranges_header())
+                                .with_header(content_range_header(start, end, len))
+                                .with_header(content_length_header(end - start + 1)),
+                        );
+                    }
+                    Err(_) => {
+                        let _ = req.respond(
+                            tiny_http::Response::from_string(missing_message).with_status_code(404),
+                        );
+                    }
+                }
+            } else {
+                match std::fs::read(path) {
+                    Ok(bytes) => {
+                        let _ = req.respond(
+                            tiny_http::Response::from_data(bytes)
+                                .with_header(content_type)
+                                .with_header(accept_ranges_header())
+                                .with_header(content_length_header(len)),
+                        );
+                    }
+                    Err(_) => {
+                        let _ = req.respond(
+                            tiny_http::Response::from_string(missing_message).with_status_code(404),
+                        );
+                    }
+                }
+            }
+        }
+        _ => {
+            let _ = req
+                .respond(tiny_http::Response::from_string(missing_message).with_status_code(404));
+        }
+    }
+}
+
+fn read_file_range(path: &Path, start: u64, end: u64) -> std::io::Result<Vec<u8>> {
+    let mut file = std::fs::File::open(path)?;
+    file.seek(SeekFrom::Start(start))?;
+    let mut bytes = vec![0; (end - start + 1) as usize];
+    file.read_exact(&mut bytes)?;
+    Ok(bytes)
 }
 
 fn pack_path() -> PathBuf {
@@ -1202,7 +1339,7 @@ fn main() -> Result<()> {
                 });
                 let _ = req.respond(tiny_http::Response::from_string(js).with_header(js_header));
             }
-            ("GET", path) if path.starts_with("/vendor/") => {
+            (method @ ("GET" | "HEAD"), path) if path.starts_with("/vendor/") => {
                 let name = path.trim_start_matches("/vendor/");
                 if name.contains('/') || name.contains("..") || name.is_empty() {
                     let _ = req.respond(
@@ -1212,27 +1349,20 @@ fn main() -> Result<()> {
                     continue;
                 }
                 let vendor_path = repo_path(BROWSER_VENDOR_DIR).join(name);
-                match std::fs::read(&vendor_path) {
-                    Ok(bytes) => {
-                        let header = if name.ends_with(".wasm") {
-                            wasm_header
-                        } else {
-                            js_header
-                        };
-                        let _ =
-                            req.respond(tiny_http::Response::from_data(bytes).with_header(header));
-                    }
-                    Err(_) => {
-                        let _ = req.respond(
-                            tiny_http::Response::from_string(
-                                "browser runtime not vendored; run ./run.sh vendor-browser-runtime",
-                            )
-                            .with_status_code(404),
-                        );
-                    }
-                }
+                let header = if name.ends_with(".wasm") {
+                    wasm_header
+                } else {
+                    js_header
+                };
+                serve_static_artifact(
+                    req,
+                    method,
+                    &vendor_path,
+                    header,
+                    "browser runtime not vendored; run ./run.sh vendor-browser-runtime",
+                );
             }
-            ("GET", path) if path.starts_with("/models/") => {
+            (method @ ("GET" | "HEAD"), path) if path.starts_with("/models/") => {
                 let name = path.trim_start_matches("/models/");
                 let Some(rel_path) = safe_relative_path(name) else {
                     let _ = req.respond(
@@ -1242,22 +1372,13 @@ fn main() -> Result<()> {
                     continue;
                 };
                 let model_path = repo_path(BROWSER_MODEL_DIR).join(rel_path);
-                match std::fs::read(&model_path) {
-                    Ok(bytes) => {
-                        let _ = req.respond(
-                            tiny_http::Response::from_data(bytes)
-                                .with_header(browser_static_header(name)),
-                        );
-                    }
-                    Err(_) => {
-                        let _ = req.respond(
-                            tiny_http::Response::from_string(
-                                "browser model not vendored; run ./run.sh vendor-browser-model",
-                            )
-                            .with_status_code(404),
-                        );
-                    }
-                }
+                serve_static_artifact(
+                    req,
+                    method,
+                    &model_path,
+                    browser_static_header(name),
+                    "browser model not vendored; run ./run.sh vendor-browser-model",
+                );
             }
             ("GET", "/api/health") => {
                 let _ = req.respond(
@@ -1347,6 +1468,15 @@ mod tests {
     use std::time::{SystemTime, UNIX_EPOCH};
 
     static TRAJECTORY_TEST_LOCK: Mutex<()> = Mutex::new(());
+
+    #[test]
+    fn parses_single_byte_ranges_for_browser_artifacts() {
+        assert_eq!(parse_byte_range("bytes=0-31", 100), Some((0, 31)));
+        assert_eq!(parse_byte_range("bytes=90-", 100), Some((90, 99)));
+        assert_eq!(parse_byte_range("bytes=-10", 100), Some((90, 99)));
+        assert_eq!(parse_byte_range("bytes=100-101", 100), None);
+        assert_eq!(parse_byte_range("items=0-1", 100), None);
+    }
 
     fn isolated_trajectory_store(name: &str) -> PathBuf {
         let nonce = SystemTime::now()

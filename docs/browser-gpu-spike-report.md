@@ -317,6 +317,21 @@ This does not prove phone-local generation yet; it proves the phone can load the
 browser runtime/model from the first-party edge instead of from Hugging Face
 during the demo.
 
+The local artifact routes behave like browser-consumable static files:
+
+- `HEAD` returns `Content-Length` and `Accept-Ranges: bytes`;
+- ranged `GET` returns `206 Partial Content`;
+- invalid ranges return `416 Range Not Satisfiable`.
+
+Verified over local HTTPS:
+
+| Check | Result |
+| --- | --- |
+| `HEAD /models/.../model_q1.onnx_data` | `Content-Length: 290552764` |
+| `GET /models/.../model_q1.onnx_data` with `Range: bytes=0-31` | `206`, 32 bytes |
+| `HEAD /vendor/transformers.js` | `Content-Length: 431974` |
+| `GET /vendor/transformers.js` with `Range: bytes=0-15` | `206`, 16 bytes |
+
 The scrub result caught:
 
 - `PERSON` via Bonsai
@@ -357,6 +372,12 @@ use the HTTPS proxy URL, for example `https://192.168.1.88:8443` or the matching
 LAN/hotspot IP printed by `./run.sh https-proxy`. A successful observation writes
 `.airplane/phone-capability-latest.json`; until then `/api/status` correctly
 reports `client_capability: null`.
+
+For local HTTPS, `./run.sh phone-observe` uses
+`.airplane/certs/airplane-local-ca.pem` automatically when that CA exists. If it
+times out with a populated last status and `client_capability: null`, the edge is
+reachable; the phone has simply not refreshed/reported against the current
+server process yet.
 
 ## Optimal Path From Here
 

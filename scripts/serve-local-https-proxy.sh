@@ -125,11 +125,19 @@ class Proxy(BaseHTTPRequestHandler):
             self.wfile.write(payload)
             return
         self.send_response(resp.status)
+        upstream_content_length = None
         for k, v in resp.getheaders():
-            if k.lower() in {"connection", "transfer-encoding", "content-encoding", "content-length"}:
+            lower = k.lower()
+            if lower == "content-length":
+                upstream_content_length = v
+                continue
+            if lower in {"connection", "transfer-encoding", "content-encoding"}:
                 continue
             self.send_header(k, v)
-        self.send_header("Content-Length", str(len(data)))
+        if self.command == "HEAD" and upstream_content_length is not None:
+            self.send_header("Content-Length", upstream_content_length)
+        else:
+            self.send_header("Content-Length", str(len(data)))
         self.end_headers()
         if self.command != "HEAD":
             try:

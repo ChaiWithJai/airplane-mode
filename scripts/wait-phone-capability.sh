@@ -6,6 +6,12 @@ cd "$(dirname "$0")/.."
 URL="${AIRPLANE_WEB_URL:-http://127.0.0.1:8099}"
 TIMEOUT_SECS="${AIRPLANE_PHONE_WAIT_SECS:-180}"
 OUT="${AIRPLANE_PHONE_OBSERVATION:-.airplane/phone-capability-latest.json}"
+LOCAL_CA="${AIRPLANE_CERT_DIR:-.airplane/certs}/airplane-local-ca.pem"
+
+CURL_ARGS=(-fsS)
+if [[ "$URL" == https://* && -f "$LOCAL_CA" ]]; then
+  CURL_ARGS+=(--cacert "$LOCAL_CA")
+fi
 
 mkdir -p "$(dirname "$OUT")"
 
@@ -20,7 +26,7 @@ EOF
 
 start="$(date +%s)"
 while true; do
-  status="$(curl -fsS "$URL/api/status" 2>/dev/null || true)"
+  status="$(curl "${CURL_ARGS[@]}" "$URL/api/status" 2>/dev/null || true)"
   if [[ -n "$status" ]] && jq -e '.client_capability != null' >/dev/null 2>&1 <<<"$status"; then
     jq '.client_capability' <<<"$status" | tee "$OUT"
     echo

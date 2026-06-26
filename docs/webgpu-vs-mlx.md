@@ -10,6 +10,9 @@ This note compares two ways to make the phone do the sensitive work locally:
 The goal is not to pick the harder path. The goal is to reuse the ecosystem
 where it is already strong, then measure honestly on the real device.
 
+For the deeper pre-spike research method and worked Airplane Mode case study,
+see [`phone-feasibility-research-plan.md`](phone-feasibility-research-plan.md).
+
 ## Current State In This Repo
 
 The repo is already shaped for either option:

@@ -2,12 +2,12 @@ Airplane Mode — eval/golden-run
 pack            : coach-session
 model layer     : rules ∪ Bonsai-1.7B
 decoding        : 5 seeded passes unioned (temp 0.5, seeds 42..)  [deterministic]
-notes           : 20
-recall          : 100.0%  (70/70)
-precision       : 51.5%  (70/136 predicted)
-hard-case recall: 100.0%  (54/54)
+notes           : 21
+recall          : 100.0%  (71/71)
+precision       : 51.1%  (71/139 predicted)
+hard-case recall: 100.0%  (55/55)
 leakage (missed): 0
-over-redactions : 66
+over-redactions : 68
 recall gate     : >= 99%
 
 note-01  gate=PASS
@@ -30,3 +30,4 @@ note-17  gate=PASS
 note-18  gate=PASS
 note-19  gate=PASS
 note-20  gate=PASS
+note-21  gate=PASS

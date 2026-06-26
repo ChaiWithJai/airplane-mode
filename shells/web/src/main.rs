@@ -515,39 +515,52 @@ fn handle_trajectory(body: &str) -> Value {
     }
 }
 
-fn recognizer_overlay() -> Value {
-    json!({
-        "name": "coach_custom_benefit_id",
-        "supported_entity": "BENEFIT_ID",
-        "patterns": [{"name": "benefit_id", "regex": "\\bBEN-[A-Z]{2}-\\d{4}\\b", "score": 0.95}],
-        "context": ["benefit id", "program code", "ref"]
-    })
+fn benefit_recognizer(pack_dir: &Path) -> Value {
+    std::fs::read_to_string(pack_dir.join("recognizers/benefits.json"))
+        .ok()
+        .and_then(|s| serde_json::from_str(&s).ok())
+        .unwrap_or_else(|| json!({}))
 }
 
-fn find_with_pack_rules(text: &str) -> Result<Vec<Span>> {
-    let pack = Pack::load(&pack_path()).context("load coach-session pack")?;
-    Ok(pack.rules.find(text))
-}
-
-fn find_with_overlay(text: &str) -> Result<(Vec<Span>, String, bool)> {
-    let pack = Pack::load(&pack_path()).context("load coach-session pack")?;
+fn find_with_baseline_rules(text: &str) -> Result<Vec<Span>> {
     let mut rules = RulesExecutor::new();
     let pack_dir = pack_path();
     rules.load_recognizer_file(&pack_dir.join("recognizers/members.json"))?;
     rules.load_recognizer_file(&pack_dir.join("recognizers/people.json"))?;
-    rules.add_regex("BENEFIT_ID", r"\bBEN-[A-Z]{2}-\d{4}\b")?;
-    let res = scrub(text, &rules, None, Sampling::greedy(), 1)?;
+    Ok(rules.find(text))
+}
+
+fn find_with_real_pack(text: &str) -> Result<(Vec<Span>, String, bool)> {
+    let pack = Pack::load(&pack_path()).context("load coach-session pack")?;
+    let res = scrub(text, &pack.rules, None, Sampling::greedy(), 1)?;
     let gate_pass = res.gate.is_pass();
     pack.validate_reward_lint()?;
     pack.validate_scope_boundary()?;
     Ok((res.redaction_map, res.scrubbed_text, gate_pass))
 }
 
+fn pack_reveal_files(pack_dir: &Path) -> Vec<Value> {
+    [
+        ("recognizers", "recognizers/benefits.json"),
+        ("schema", "schema.yaml"),
+        ("policy", "policy.yaml"),
+        ("sink", "sink.yaml"),
+        ("eval", "eval/expected/note-01.json"),
+    ]
+    .into_iter()
+    .map(|(role, rel)| {
+        let text = std::fs::read_to_string(pack_dir.join(rel)).unwrap_or_default();
+        let preview = text.lines().take(12).collect::<Vec<_>>().join("\n");
+        json!({"role": role, "path": rel, "preview": preview})
+    })
+    .collect()
+}
+
 fn handle_pack_demo() -> Value {
     let note = "Follow-up note: client brought new program code BEN-MH-7741 for the coach portal.";
-    let before = find_with_pack_rules(note).unwrap_or_default();
+    let before = find_with_baseline_rules(note).unwrap_or_default();
     let (after, scrubbed, gate_pass) =
-        find_with_overlay(note).unwrap_or_else(|_| (Vec::new(), note.to_string(), false));
+        find_with_real_pack(note).unwrap_or_else(|_| (Vec::new(), note.to_string(), false));
     let pack_dir = pack_path();
     let pack = Pack::load(&pack_dir);
     let (reward, scope) = match pack {
@@ -560,7 +573,8 @@ fn handle_pack_demo() -> Value {
     json!({
         "pack_yaml": std::fs::read_to_string(pack_dir.join("pack.yaml")).unwrap_or_default(),
         "policy_yaml": std::fs::read_to_string(pack_dir.join("policy.yaml")).unwrap_or_default(),
-        "added_recognizer": recognizer_overlay(),
+        "pack_files": pack_reveal_files(&pack_dir),
+        "added_recognizer": benefit_recognizer(&pack_dir),
         "note": note,
         "before_count": before.len(),
         "after_redactions": after.iter().map(|s| json!({"text": s.text, "entity": s.entity, "layer": s.layer})).collect::<Vec<_>>(),
@@ -570,7 +584,7 @@ fn handle_pack_demo() -> Value {
             {"name":"pack-blindness","pass": Pack::validate_blindness(&pack_path()).is_ok()},
             {"name":"reward-lint","pass": reward},
             {"name":"scope-boundary","pass": scope},
-            {"name":"eval smoke","pass": gate_pass && after.iter().any(|s| s.entity == "BENEFIT_ID")}
+            {"name":"pack eval smoke","pass": gate_pass && after.iter().any(|s| s.entity == "BENEFIT_ID")}
         ]
     })
 }
@@ -744,6 +758,28 @@ credentials:
         .unwrap();
         assert_eq!(slack_channel(&sink), "#coach-records");
         assert_eq!(sink.credentials.keychain_ref(), "slack-bot-token");
+    }
+
+    #[test]
+    fn pack_demo_reveals_five_files_and_catches_new_identifier() {
+        let out = handle_pack_demo();
+        let files = out["pack_files"].as_array().unwrap();
+        let roles: Vec<_> = files.iter().filter_map(|f| f["role"].as_str()).collect();
+        assert_eq!(
+            roles,
+            vec!["recognizers", "schema", "policy", "sink", "eval"]
+        );
+        assert_eq!(out["before_count"], 0, "{out}");
+        assert_eq!(out["gate_pass"], true, "{out}");
+        assert!(out["scrubbed_text"]
+            .as_str()
+            .unwrap()
+            .contains("[BENEFIT_ID]"));
+        assert!(out["gates"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|g| g["name"] == "pack eval smoke" && g["pass"] == true));
     }
 
     #[test]

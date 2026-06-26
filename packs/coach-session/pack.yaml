@@ -8,6 +8,7 @@ spec:
   recognizers:
     - recognizers/members.json
     - recognizers/people.json
+    - recognizers/benefits.json
   schema: schema.yaml
   policy: policy.yaml
   sink:   sink.yaml

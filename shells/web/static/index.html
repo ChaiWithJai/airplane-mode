@@ -42,7 +42,7 @@
   #phone.dark{background:radial-gradient(120% 80% at 50% 0%,#1a1712,#0e0c0a)}
   #phone.dark.green{background:radial-gradient(120% 75% at 50% 100%,#12231a,#0a0d0b)}
 
-  .screen{flex:1;min-height:0;display:flex;flex-direction:column;padding:20px 24px 24px;overflow:hidden;animation:pop .35s ease}
+  .screen{flex:1;min-height:0;display:flex;flex-direction:column;padding:16px 18px 18px;overflow:hidden;animation:pop .35s ease}
 
   h1{font:800 40px/.97 var(--sans);letter-spacing:0;margin:0}
   .kicker{font:500 12px/1 var(--mono);letter-spacing:.07em;color:#a39a86}
@@ -56,8 +56,8 @@
   .sw b{position:absolute;top:3px;width:20px;height:20px;background:#fff;border-radius:50%;
     box-shadow:0 1px 2px rgba(0,0,0,.25);transition:left .25s,right .25s}
   .sw.on{background:var(--gold)} .sw.on b{right:3px} .sw.off{background:#2f6f4c} .sw.off b{left:3px}
-  .note{background:var(--card);border:1.5px solid #ece4d4;border-radius:16px;padding:16px;
-    font:400 14.5px/1.65 var(--sans);color:#3a352c;flex:1;min-height:0;overflow:auto;width:100%;resize:none;outline:none}
+  .note{background:var(--card);border:1.5px solid #ece4d4;border-radius:10px;padding:13px;
+    font:400 14.5px/1.55 var(--sans);color:#3a352c;flex:1;min-height:116px;overflow:auto;width:100%;resize:none;outline:none}
   .note:focus{border-color:#c6912f;box-shadow:0 0 0 3px rgba(198,145,47,.16)}
   .chip{font:600 11px var(--sans);color:#3a352c;background:#efe9da;border-radius:8px;padding:5px 9px;display:inline-block}
   .pill{font:600 9px/1 var(--mono);border-radius:20px;padding:4px 8px;display:inline-flex;align-items:center;gap:4px}
@@ -69,10 +69,11 @@
   .micorb{width:33px;height:33px;border-radius:50%;background:rgba(255,255,255,.18);display:inline-flex;align-items:center;justify-content:center;font-size:17px}
   .captureTop{display:flex;align-items:center;gap:10px;margin-top:4px}
   .brandMark{width:28px;height:28px;border-radius:9px;background:var(--ink);display:flex;align-items:center;justify-content:center;color:var(--gold2);font-size:14px;flex:none}
-  .captureHero{margin-top:12px;background:#ffffff;border:1.5px solid #dde3da;border-radius:14px;padding:14px}
-  .captureHero h1{font-size:25px;line-height:1.04;letter-spacing:0;margin-top:7px}
-  .flowRail{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:12px}
-  .flowStep{border:1px solid #dce2da;background:#ffffff;border-radius:10px;padding:7px 5px 8px;min-width:0;text-align:center}
+  .captureHero{margin-top:9px;background:#ffffff;border:1.5px solid #dde3da;border-radius:8px;padding:11px}
+  .captureHero h1{font-size:22px;line-height:1.05;letter-spacing:0;margin-top:4px}
+  .captureHero .sub{font-size:12.5px;line-height:1.35}
+  .flowRail{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin-top:9px}
+  .flowStep{border:1px solid #dce2da;background:#ffffff;border-radius:7px;padding:5px 2px 6px;min-width:0;text-align:center}
   .flowStep b{display:block;font:800 9px/1 var(--mono);letter-spacing:0;color:#8a8273;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .flowStep span{display:block;width:7px;height:7px;border-radius:50%;background:#d8cdb8;margin:0 auto 5px}
   .flowStep.active{border-color:#c6912f;background:#fff6e3}
@@ -85,7 +86,7 @@
   #phone.dark .flowStep.active{border-color:#4b6b52;background:rgba(79,208,140,.08)}
   #phone.dark .flowStep.active span{background:#4fd08c}
   #phone.dark .flowStep.done{border-color:#2f6f4c;background:rgba(79,208,140,.05)}
-  .boundaryRule{margin-top:7px;border:1px dashed #c8d0c8;border-radius:9px;padding:7px 9px;font:700 9px/1.35 var(--mono);color:#647066;background:rgba(255,255,255,.48);text-align:center}
+  .boundaryRule{margin-top:5px;border:1px dashed #c8d0c8;border-radius:7px;padding:5px 8px;font:700 8.5px/1.3 var(--mono);color:#647066;background:rgba(255,255,255,.48);text-align:center}
   #phone.dark .boundaryRule{border-color:#2f3a32;background:rgba(255,255,255,.025);color:#7e8a80}
   .lessonGrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
   .lessonBox{border:1px solid #dce2da;background:#ffffff;border-radius:12px;padding:10px;min-height:62px}
@@ -135,6 +136,24 @@
   .miniBtn{font:800 9px var(--mono);color:#245b8f;background:#edf4fb;border:1px solid #c9d9e7;border-radius:999px;padding:6px 8px;cursor:pointer}
   .sampleBtn{font:700 12px var(--sans);color:var(--gold);background:#f6ecd6;border:1px solid #e3c98a;border-radius:999px;padding:8px 11px;cursor:pointer}
   .noteMeta{display:flex;align-items:center;justify-content:space-between;margin-top:10px}
+  .captureStack{display:flex;flex-direction:column;gap:8px;min-height:0;flex:1}
+  .edgeSummary{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;margin-top:8px;border:1px solid #dce2da;background:#fbfcfa;border-radius:8px;padding:9px 10px}
+  .edgeSummary b{display:block;font:800 10px var(--mono);letter-spacing:.04em;color:#a39a86;text-transform:uppercase}
+  .edgeSummary span{display:block;font:600 12px/1.35 var(--sans);color:#3a352c;margin-top:3px}
+  .edgeBadge{font:800 9px/1.1 var(--mono);color:var(--green);background:#e6f0e7;border:1px solid #bfdcc6;border-radius:999px;padding:5px 7px;white-space:nowrap}
+  .captureControls{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}
+  .captureControls .micbtn{padding:13px 14px;border-radius:10px;font-size:14px;box-shadow:none}
+  .captureControls .sampleBtn{border-radius:999px;white-space:nowrap;padding:10px 11px}
+  .disclosure{border:1px solid #dce2da;background:#ffffff;border-radius:8px;overflow:hidden}
+  .disclosure summary{list-style:none;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 11px;cursor:pointer;font:800 11px var(--mono);letter-spacing:.04em;color:#6f430b;text-transform:uppercase}
+  .disclosure summary::-webkit-details-marker{display:none}
+  .disclosure summary:after{content:"+";font:900 15px var(--mono);color:#8a8273}
+  .disclosure[open] summary:after{content:"-"}
+  .disclosureBody{border-top:1px solid #edf0eb;padding:10px 11px;font:500 12px/1.45 var(--sans);color:#4f493f}
+  .businessList{display:grid;grid-template-columns:1fr;gap:6px;margin-top:8px}
+  .businessList div{border-left:3px solid #bfdcc6;padding-left:8px}
+  .captureMeta{display:flex;align-items:center;justify-content:space-between;gap:8px;font:700 10px var(--mono);color:#8a8273}
+  .disclosureBody .backendChoice,.disclosureBody .capPanel{margin:10px 10px 0}
   .btn.disabled{background:#d9d0bd;color:#8a8273;cursor:default;box-shadow:none}
   .mono{font-family:var(--mono)}
   .grow{flex:1;min-height:0}
@@ -149,6 +168,13 @@
     align-items:center;justify-content:center;padding:18px;animation:pop .3s ease}
   .scard{background:#fff;border-radius:16px;overflow:hidden;width:100%;max-width:380px;
     box-shadow:0 34px 60px -28px rgba(40,30,10,.5);border:1px solid #e2dac9}
+  @media (max-width:380px){
+    .screen{padding:12px 12px 14px}
+    .flowStep b{font-size:7.5px}
+    .captureHero h1{font-size:20px}
+    .captureControls{grid-template-columns:1fr}
+    .captureControls .sampleBtn{width:100%}
+  }
 </style>
 </head>
 <body>
@@ -163,9 +189,10 @@
 const NOTE = "Met with Maria Alvarez (CM-204815) at her place Tuesday. She's the one whose daughter just started college. Committed to a 10-min morning walk daily.";
 const STEPS = new Set(['capturing','scrubbing','gated','record','flush','delivered','pack']);
 const RESULT_STEPS = new Set(['gated','record','flush','delivered','pack']);
-const DRAFT_KEY = 'airplane-demo-draft-v2';
+const DRAFT_KEY = 'airplane-demo-draft-v3';
 const OUTBOX_KEY = 'airplane-demo-send-outbox-v1';
-const S = { screen:'capturing', note:'', result:null, error:null, posted:false, sendNote:'', sendQueued:false, trajectoryCount:0, trajectoryNote:'', packDemo:null, packError:null, listening:false, speechMsg:'', status:null, job:null, capability:null, backend:'mac-edge', backendNote:'', browserModel:{status:'idle',detail:'not loaded',model:'onnx-community/Bonsai-1.7B-ONNX',elapsed_ms:0,tokens:0,tps:0,output_preview:''} };
+const DEFAULT_BACKEND = 'browser-gpu';
+const S = { screen:'capturing', note:'', result:null, error:null, posted:false, sendNote:'', sendQueued:false, trajectoryCount:0, trajectoryNote:'', packDemo:null, packError:null, listening:false, speechMsg:'', status:null, job:null, capability:null, backend:DEFAULT_BACKEND, backendNote:'', browserModel:{status:'idle',detail:'not loaded',model:'onnx-community/Bonsai-1.7B-ONNX',elapsed_ms:0,tokens:0,tps:0,output_preview:''} };
 let recognizer = null;
 let browserWorker = null;
 let browserWorkerPending = null;
@@ -221,12 +248,12 @@ function capabilityHtml(){
 
 function backendHtml(){
   const gpuReady = !!(S.capability && S.capability.webgpu);
-  const active = S.backend || 'mac-edge';
-  const gpuState = gpuReady ? 'capable · adapter next' : 'needs HTTPS/WebGPU';
+  const active = S.backend || DEFAULT_BACKEND;
+  const gpuState = gpuReady ? 'capable · live probe' : 'falls back safely';
   const bm = S.browserModel || {};
   const note = active === 'browser-gpu'
-    ? 'Browser GPU is selected. The phone attempts local Bonsai q1 span generation, then the Mac-edge verifier remains the egress gate until the span contract is integrated.'
-    : 'Mac edge is the live path: local Bonsai via llama-server, Rust gate, Slack sink.';
+    ? 'Browser GPU is the default: the phone tries local Bonsai span generation first, then the verifier gate decides whether any clean record can leave.'
+    : 'Mac edge keeps the same first-party boundary: local Bonsai via llama-server, Rust gate, Slack sink.';
   return `<div class="backendChoice">
     <b>Backend path</b>
     <div class="backendBtns">
@@ -246,13 +273,39 @@ function backendHtml(){
   </div>`;
 }
 
+function businessDisclosureHtml(){
+  const c = S.capability || {};
+  const secure = window.isSecureContext || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+  const gpuLine = c.webgpu ? 'This browser exposes WebGPU, so the phone can attempt the local model path.' :
+    (secure ? 'This browser did not expose WebGPU; the demo falls back to the laptop edge without changing the trust boundary.' : 'Phone WebGPU requires HTTPS; use the secure LAN URL or the HF Space to test capability.');
+  return `<details class="disclosure">
+    <summary>Why Browser GPU matters</summary>
+    <div class="disclosureBody">
+      <div>The business case is control: sensitive work runs on hardware or a first-party network the organization manages, while Slack only receives the clean record.</div>
+      <div class="businessList">
+        <div><b>Lower lift:</b> no native app install before a team can test the workflow.</div>
+        <div><b>Sovereign path:</b> phone to laptop today, IT-managed VPN or local edge later.</div>
+        <div><b>Portable moat:</b> the model can move; the verifier gate and pack contract stay stable.</div>
+      </div>
+      <div class="mono" style="margin-top:8px;font-size:9.5px;color:#736c5d">${esc(gpuLine)}</div>
+    </div>
+  </details>`;
+}
+
+function pathDisclosureHtml(){
+  return `<details class="disclosure">
+    <summary>Path and capability</summary>
+    <div class="disclosureBody" style="padding:0 0 10px">
+      ${backendHtml()}
+      ${capabilityHtml()}
+    </div>
+  </details>`;
+}
+
 // ---------- screens ----------
 const screens = {
  capturing(){ setDark(false);
    const hasNote = !!S.note.trim();
-   const slackConfigured = S.status&&S.status.slack&&S.status.slack.configured;
-   const slackRoute = S.status&&S.status.slack?`${S.status.slack.route} -> ${S.status.slack.channel||'#coach-records'}`:'checking sink';
-   const modelReachable = !!(S.status&&S.status.model&&S.status.model.reachable);
    const canSpeech = !!speechRecognitionCtor();
    const dictLabel = S.listening ? 'Listening…' : (canSpeech ? 'Start dictation' : 'Use keyboard mic');
    return `
@@ -263,33 +316,30 @@ const screens = {
    ${flowHtml('capturing')}
    <div class="captureHero">
      <div class="stepTitle">
-       <div><div class="mono" style="font-size:10px;color:#a39a86;letter-spacing:.08em">STEP 1</div><h1>Capture the note</h1></div>
-       ${statusPill('edge',true)}
+       <div><div class="mono" style="font-size:10px;color:#a39a86;letter-spacing:.08em">STEP 1</div><h1>Capture a session note</h1></div>
+       ${statusPill(S.backend==='browser-gpu'?'GPU first':'edge',true)}
      </div>
-     <div class="sub" style="margin-top:7px">Raw text stays on the phone/laptop edge. The demo only asks you to decide what should happen next.</div>
-     <button class="micbtn ${S.listening?'listening':''}" data-act="dictate" style="margin-top:13px">
-       <span class="micorb">${S.listening?'■':'🎙'}</span><span>${dictLabel}</span>
-     </button>
-     <div class="sinkLine">
-       <div id="captureMsg" class="mono" style="font-size:10px;color:${S.speechMsg?'var(--amber)':'#a39a86'}">${esc(S.speechMsg||'edge capture · verifier gated')}</div>
-       <div class="sinkBadges">
-         <span class="sinkState" style="color:${modelReachable?'var(--green)':'var(--amber)'};background:${modelReachable?'#e6f0e7':'#f6ecd6'};border-color:${modelReachable?'#bfdcc6':'#e3c98a'}">model ${modelReachable?'ready':'off'}</span>
-         <span class="sinkState" style="color:${slackConfigured?'var(--green)':'var(--amber)'};background:${slackConfigured?'#e6f0e7':'#f6ecd6'};border-color:${slackConfigured?'#bfdcc6':'#e3c98a'}">Slack ${slackConfigured?'live':'preview'}</span>
-       </div>
+     <div class="sub" style="margin-top:6px">Browser GPU is the default attempt. If the phone cannot run it, the same first-party edge verifier handles the fallback.</div>
+     <div class="edgeSummary">
+       <div><b>Business boundary</b><span>Raw notes stay on phone/laptop or an IT-managed private network; Slack only gets gate-clean output.</span></div>
+       <div class="edgeBadge">FIRST-PARTY</div>
      </div>
-     <div class="mono" style="margin-top:7px;font-size:9px;color:#a39a86;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(slackRoute)}</div>
    </div>
-   <div class="lessonGrid">
-     <div class="lessonBox"><b>Input</b><span>voice or typed session note</span></div>
-     <div class="lessonBox good"><b>Boundary</b><span>raw PHI cannot egress</span></div>
+   <div class="captureStack">
+     ${businessDisclosureHtml()}
+     <div class="captureControls">
+       <button class="micbtn ${S.listening?'listening':''}" data-act="dictate">
+         <span class="micorb">${S.listening?'■':'🎙'}</span><span>${dictLabel}</span>
+       </button>
+       <button data-act="sample" class="sampleBtn">Use sample</button>
+     </div>
+     <textarea id="noteInput" class="note" placeholder="Session note appears here…" oninput="handleNoteInput(this.value)">${esc(S.note)}</textarea>
+     <div class="captureMeta">
+       <span id="captureMsg" style="color:${S.speechMsg?'var(--amber)':'#8a8273'}">${esc(S.speechMsg||'edge capture · verifier gated')}</span>
+       <span id="wordCount">${S.note.trim()?S.note.trim().split(/\s+/).length:0} words</span>
+     </div>
+     ${pathDisclosureHtml()}
    </div>
-   ${backendHtml()}
-   ${capabilityHtml()}
-   <textarea id="noteInput" class="note" style="margin-top:10px" placeholder="Session note appears here…" oninput="handleNoteInput(this.value)">${esc(S.note)}</textarea>
-   <div class="noteMeta">
-     <button data-act="sample" class="sampleBtn">Use sample note</button>
-     <span id="wordCount" class="mono" style="font-size:10px;color:#8a8273">${S.note.trim()?S.note.trim().split(/\s+/).length:0} words</span></div>
-   <div class="grow"></div>
    <button class="btn ${hasNote?'':'disabled'}" data-act="scrub">${hasNote?'Scrub on device':'Waiting for note'}</button>`; },
 
  scrubbing(){ setDark(true,false);
@@ -546,7 +596,7 @@ function loadDraft(){
     S.sendQueued=!!d.sendQueued;
     S.trajectoryCount=d.trajectoryCount||0;
     S.trajectoryNote=d.trajectoryNote||'';
-    S.backend=d.backend||'mac-edge';
+    S.backend=d.backend||DEFAULT_BACKEND;
     S.backendNote=d.backendNote||'';
     S.browserModel=d.browserModel||S.browserModel;
   }catch(_){}

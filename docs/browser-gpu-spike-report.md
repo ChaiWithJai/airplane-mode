@@ -269,10 +269,18 @@ The local HTTPS proxy was verified for the browser path:
 | `AIRPLANE_WEB_URL=http://127.0.0.1:8099 ./run.sh browser-span-smoke` | `browser_spans_seconds: 5.20`, Slack accepted, trajectory `local-000011` |
 | `AIRPLANE_WEB_URL=https://127.0.0.1:8443 ./run.sh browser-span-smoke` | `browser_spans_seconds: 2.72`, Slack accepted, trajectory `local-000010` |
 
-Supply-chain truth: the worker currently imports `@huggingface/transformers`
-from a public CDN. That does **not** send raw notes or span payloads to the CDN,
-but it does fetch runtime code from the public web. For a regulated end-user
-deployment, self-host or vendor that bundle behind the same first-party network.
+Supply-chain truth: the worker tries to import a local first-party runtime from
+`/vendor/transformers.js` and falls back to the CDN only when the local runtime
+is absent. Vendor it for the sovereign demo path:
+
+```bash
+./run.sh vendor-browser-runtime
+```
+
+This writes `.airplane/browser-vendor/transformers.js` and keeps the artifact out
+of git. Raw notes do not go to the CDN in either mode, but regulated end-user
+deployments should self-host or vendor that runtime behind the same first-party
+network.
 
 The scrub result caught:
 

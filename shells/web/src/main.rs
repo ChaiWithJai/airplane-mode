@@ -22,6 +22,7 @@ const DEFAULT_PACK_DIR: &str = "packs/coach-session";
 const INDEX: &str = "shells/web/static/index.html";
 const GPU_PROBE: &str = "shells/web/static/gpu.html";
 const BONSAI_WORKER: &str = "shells/web/static/bonsai-worker.js";
+const BROWSER_VENDOR_TRANSFORMERS: &str = ".airplane/browser-vendor/transformers.js";
 const DEFAULT_ADDR: &str = "0.0.0.0:8099";
 const PASSES: u32 = 5;
 const SLACK_WEBHOOK_KEYCHAIN_REF: &str = "slack-webhook-url";
@@ -1168,6 +1169,22 @@ fn main() -> Result<()> {
                     "postMessage({status:'error',detail:'worker missing'});".into()
                 });
                 let _ = req.respond(tiny_http::Response::from_string(js).with_header(js_header));
+            }
+            ("GET", "/vendor/transformers.js") => {
+                match std::fs::read_to_string(BROWSER_VENDOR_TRANSFORMERS) {
+                    Ok(js) => {
+                        let _ = req
+                            .respond(tiny_http::Response::from_string(js).with_header(js_header));
+                    }
+                    Err(_) => {
+                        let _ = req.respond(
+                            tiny_http::Response::from_string(
+                                "browser runtime not vendored; run ./run.sh vendor-browser-runtime",
+                            )
+                            .with_status_code(404),
+                        );
+                    }
+                }
             }
             ("GET", "/api/health") => {
                 let _ = req.respond(

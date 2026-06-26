@@ -1,13 +1,11 @@
-import {
-  pipeline,
-  TextStreamer,
-  InterruptableStoppingCriteria,
-} from "https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.1.0";
-
 const MODEL_ID = "onnx-community/Bonsai-1.7B-ONNX";
+const TRANSFORMERS_LOCAL = "/vendor/transformers.js";
+const TRANSFORMERS_CDN = "https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.1.0";
+
 let generatorPromise = null;
 let generator = null;
-const stoppingCriteria = new InterruptableStoppingCriteria();
+let transformersPromise = null;
+let stoppingCriteria = null;
 
 function post(status, data = {}) {
   self.postMessage({ status, ...data });
@@ -20,8 +18,21 @@ async function checkWebGpu() {
   return adapter;
 }
 
+async function loadTransformers() {
+  if (!transformersPromise) {
+    transformersPromise = import(TRANSFORMERS_LOCAL)
+      .catch(() => import(TRANSFORMERS_CDN))
+      .then((mod) => {
+        stoppingCriteria ||= new mod.InterruptableStoppingCriteria();
+        return mod;
+      });
+  }
+  return transformersPromise;
+}
+
 async function load(progress_callback = null) {
   await checkWebGpu();
+  const { pipeline } = await loadTransformers();
   if (!generatorPromise) {
     post("loading", { detail: "downloading Bonsai q1 ONNX weights" });
     generatorPromise = pipeline("text-generation", MODEL_ID, {
@@ -54,6 +65,7 @@ function spanMessages(text) {
 
 async function generateSpans(text) {
   const gen = generator || (await load());
+  const { TextStreamer } = await loadTransformers();
   let startedAt = 0;
   let numTokens = 0;
   let tps = 0;
@@ -101,7 +113,7 @@ self.addEventListener("message", async (event) => {
     } else if (type === "generate-spans") {
       await generateSpans(String(text || ""));
     } else if (type === "interrupt") {
-      stoppingCriteria.interrupt();
+      stoppingCriteria?.interrupt?.();
       post("interrupted");
     }
   } catch (error) {

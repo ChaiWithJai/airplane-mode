@@ -10,8 +10,14 @@ to extend the inference runtime or the iOS adapter, start with
 [`../positioning/cncf-end-user-and-inference-ecosystem.md`](../positioning/cncf-end-user-and-inference-ecosystem.md)
 after you have seen the demo run once.
 
+The core narrative for why this demo exists is Jai's intro note:
+[`docs/bonsai-ecosystem-plan.md`](../bonsai-ecosystem-plan.md). Keep that in
+mind while demoing: this is a Bonsai ecosystem case study, not just a Slack toy.
+
 For architecture, network topology, and data-flow diagrams, see
 [`docs/demo/system-network-data-flows.md`](system-network-data-flows.md).
+For the current screen FSM, addressable state, and service failure meanings, see
+[`docs/demo/fsm-service-map.md`](fsm-service-map.md).
 For the adopter/builder reference architecture, see
 [`docs/demo/reference-architecture.md`](reference-architecture.md).
 For a narrative walkthrough, verification guide, workload profile, and worked examples,
@@ -24,9 +30,10 @@ see [`docs/demo/how-the-demo-works.md`](how-the-demo-works.md).
 - A Mac and an iPhone with Safari.
 - Keep the Mac awake and plugged in for the whole demo.
 
-## Start the two servers
+## Start the demo services
 
-You need **both** running at the same time, in two terminals.
+You need the model server and web shell running. For the phone Browser GPU path,
+also run the local HTTPS proxy.
 
 1. **Model server** (PrismML Bonsai via stock `llama-server`, OpenAI-compatible, default F16 on Metal):
    ```sh
@@ -39,6 +46,13 @@ You need **both** running at the same time, in two terminals.
    ./run.sh web
    ```
    This builds + runs the web shell, binds `0.0.0.0:8099`, and prints `http://localhost:8099` plus any LAN URLs.
+
+3. **Local HTTPS proxy** for phone Browser GPU:
+   ```sh
+   ./run.sh https-proxy
+   ```
+   This serves the same app at `https://<mac-lan-ip>:8443`. Use this secure URL
+   on the phone when testing Browser GPU or dictation.
 
 ### Pre-checks (run on the Mac)
 
@@ -64,7 +78,8 @@ First, find the URL: the `./run.sh web` output prints it, or get the Mac's IP wi
 ```sh
 ipconfig getifaddr en0
 ```
-Then use `http://<that-ip>:8099`.
+Then use `https://<that-ip>:8443` for the primary phone demo. Use
+`http://<that-ip>:8099` only for setup checks or fallback.
 
 Use a first-party network: same Wi-Fi, Personal Hotspot, clinic LAN, or
 IT-managed VPN. Do not use a public tunnel for the scrub workflow. The demo
@@ -74,7 +89,7 @@ record is allowed to leave after the verifier gate.
 ### Primary: same Wi-Fi
 
 1. Put the phone on the **same Wi-Fi** as the Mac.
-2. Open `http://<mac-lan-ip>:8099` in **Safari**.
+2. Open `https://<mac-lan-ip>:8443` in **Safari**.
 
 That's it — you should see the demo.
 
@@ -90,9 +105,11 @@ The fix is to put both devices on the iPhone's own local network:
    ```sh
    ipconfig getifaddr en0
    ```
-4. On the phone, open `http://172.20.10.x:8099`.
+4. On the phone, open `https://172.20.10.x:8443`.
 
-**No server restart needed** — `airplane-web` already listens on all interfaces. All traffic stays on the phone's own local network (no internet), which preserves the demo's "stays local" story.
+**No server restart needed** — `airplane-web` listens on all interfaces and the
+HTTPS proxy forwards to it. All scrub traffic stays on the phone's own local
+network, which preserves the demo's "stays local" story.
 
 For a managed organization, replace the hotspot with the organization's private
 network/VPN and replace the local development certificate with an IT-managed

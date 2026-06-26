@@ -4,6 +4,12 @@ This file is the low-cognitive-load orientation for the current Airplane Mode
 demo. Historical canon and superseded design material live in
 [`docs/deprecations/canon/`](docs/deprecations/canon/).
 
+The core theme is Jai's intro note:
+[`docs/bonsai-ecosystem-plan.md`](docs/bonsai-ecosystem-plan.md). Read it as the
+"who, what, and why" for the repo: dogfood Bonsai in public, prove local
+inference with a hard healthcare coaching case study, and turn the result into a
+reference other builders and adopters can reuse.
+
 ## Current Demo Path
 
 ```text
@@ -28,11 +34,13 @@ dependency.
 
 ## Current Read Order
 
-1. [`README.md`](README.md) — run and understand the demo.
-2. [`docs/demo/onboarding.md`](docs/demo/onboarding.md) — phone, HTTPS, Slack.
-3. [`docs/demo/how-the-demo-works.md`](docs/demo/how-the-demo-works.md) — architecture, topology, examples.
-4. [`docs/extending.md`](docs/extending.md) — change the pack for a hackathon.
-5. [`docs/deprecations/`](docs/deprecations/) — old patterns and revival.
+1. [`docs/bonsai-ecosystem-plan.md`](docs/bonsai-ecosystem-plan.md) — who, what, why.
+2. [`README.md`](README.md) — run and understand the demo.
+3. [`docs/demo/onboarding.md`](docs/demo/onboarding.md) — phone, HTTPS, Slack.
+4. [`docs/demo/fsm-service-map.md`](docs/demo/fsm-service-map.md) — service map, screens, addressable state.
+5. [`docs/demo/how-the-demo-works.md`](docs/demo/how-the-demo-works.md) — architecture, topology, examples.
+6. [`docs/extending.md`](docs/extending.md) — change the pack for a hackathon.
+7. [`docs/deprecations/`](docs/deprecations/) — old patterns and revival.
 
 ## Load-Bearing Decisions
 

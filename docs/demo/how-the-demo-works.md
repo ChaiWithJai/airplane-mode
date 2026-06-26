@@ -5,12 +5,19 @@ letting raw identifiers leave the edge node. It is intentionally small: one phon
 one local Rust web shell, one local model server, one declarative pack, one Slack sink,
 and a verifier gate in front of every egress path.
 
+The theme comes from Jai's intro note:
+[`../bonsai-ecosystem-plan.md`](../bonsai-ecosystem-plan.md). The demo is a
+dogfooded Bonsai ecosystem reference: local inference applied to a hard healthcare
+coaching workflow, with honest limits and reproducible proof.
+
 For the diagram-only version, see
 [`system-network-data-flows.md`](system-network-data-flows.md).
+For the current screen FSM, service map, addressable routes, and incident-state
+meanings, see [`fsm-service-map.md`](fsm-service-map.md).
 
 ## The Short Version
 
-1. The phone opens the local web UI at `http://<mac-lan-ip>:8099`.
+1. The phone opens the local web UI at `https://<mac-lan-ip>:8443`.
 2. The user dictates or types a synthetic coaching note.
 3. `airplane-web` sends the note to `airplane-core` on the Mac.
 4. `airplane-core` applies pack recognizers and asks local Bonsai for structured output.
@@ -78,7 +85,7 @@ Run these from the repo root.
 ```bash
 ./run.sh web
 curl http://127.0.0.1:8099/api/status | jq '{slack:.slack, model:.model}'
-curl http://<mac-lan-ip>:8099/api/health
+curl --insecure https://<mac-lan-ip>:8443/api/health
 ```
 
 Expected on this machine:
@@ -180,7 +187,7 @@ Slack egress in the web shell is also bounded with `AIRPLANE_SLACK_TIMEOUT_SECS`
 The phone reaches **Not posted** through this state path:
 
 ```text
-ready -> flush -> POST /api/send -> no ok:true response -> delivered(posted=false)
+record -> flush -> POST /api/send -> no ok:true response -> delivered(posted=false)
 ```
 
 That state means the system did not receive a confirmed Slack acknowledgement.

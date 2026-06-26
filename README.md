@@ -8,6 +8,11 @@ scripts, Google Sheets glue, intake forms, Zapier-style handoffs, or EHR-adjacen
 workarounds. You do not need to be a Rust expert. You do need to be willing to run
 terminal commands and keep the demo synthetic.
 
+The narrative anchor is Jai's intro note:
+[`docs/bonsai-ecosystem-plan.md`](docs/bonsai-ecosystem-plan.md). It explains
+who is building this, why healthcare is the first case study, and why the demo is
+framed as Bonsai ecosystem work rather than a one-off app.
+
 ## What This Demo Proves
 
 The core pattern is simple:
@@ -119,9 +124,16 @@ local: http://localhost:8099
 phone: http://192.168.x.x:8099
 ```
 
-Open `http://localhost:8099` on your laptop, or open the printed `phone:` URL on
-a phone connected to the same Wi-Fi. If the phone is on the Mac's Personal
-Hotspot, use the hotspot IP printed by the server.
+For the phone Browser GPU path, start the local HTTPS proxy in terminal 3:
+
+```bash
+./run.sh https-proxy
+```
+
+Open `http://localhost:8099` on your laptop, or open
+`https://<mac-lan-ip>:8443` on a phone connected to the same Wi-Fi. If the phone
+is on the Mac's Personal Hotspot, use the hotspot IP printed by the server with
+`:8443`. Use the plain `:8099` phone URL only for setup checks or fallback.
 
 In the UI:
 
@@ -386,6 +398,9 @@ can leave. The iOS scaffold currently lets builders switch between an
 backend-shaped scrub response. That is interoperability scaffolding, not the
 real iPhone 11 hardware proof.
 
+For the screen-level state machine mapped to the services above, see
+[`docs/demo/fsm-service-map.md`](docs/demo/fsm-service-map.md).
+
 ## Deprecated Patterns And Revival
 
 The repo keeps old demo patterns as ecosystem history instead of deleting them.
@@ -422,12 +437,14 @@ recover with Git when a builder has a real use case.
 | `shells/mcp/` | Agent-callable interface over the same core. |
 | `shells/ios/` | Simulator-safe native scaffold with selectable backend mocks. |
 | `packs/coach-session/` | Reference pack and synthetic eval set. |
+| `docs/bonsai-ecosystem-plan.md` | Jai's intro: who is building this, what he is doing, and why Bonsai ecosystem work is the theme. |
 | `docs/model-setup.md` | Model download/runtime details. |
 | `docs/deprecations/` | Cleanup proposal, deprecated-pattern decisions, and GitOps revival runbook. |
 | `docs/hipaa-cloudflare-boundary.md` | Why Cloudflare HTTPS helps capability probes but is not HIPAA compliance. |
 | `docs/sovereign-network-pattern.md` | First-party phone-to-edge network pattern for adopters. |
 | `docs/contracts/` | Shared JSON contract fixtures for shell/backend interoperability. |
 | `docs/demo/onboarding.md` | Phone demo and Slack runbook. |
+| `docs/demo/fsm-service-map.md` | Current service map, screen FSM, addressable state, and service failure meanings. |
 | `docs/demo/reference-architecture.md` | CNCF-style adopter/builder reference architecture. |
 | `docs/extending.md` | Pack extension walkthrough. |
 | `docs/demo/how-the-demo-works.md` | Architecture, topology, workload profile, worked examples. |

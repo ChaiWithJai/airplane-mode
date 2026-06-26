@@ -1,6 +1,13 @@
 # System, Network, and Data Flows
 
-This is the review map for the phone demo at `http://<mac-lan-ip>:8099`.
+This is the review map for the phone demo. Use `https://<mac-lan-ip>:8443` when
+testing Browser GPU on a phone, because WebGPU needs a secure context. The
+plain `http://<mac-lan-ip>:8099` route remains useful for laptop setup and
+fallback checks.
+
+For the screen FSM that sits on top of this service map, see
+[`fsm-service-map.md`](fsm-service-map.md). For the narrative anchor behind the
+demo, see [`../bonsai-ecosystem-plan.md`](../bonsai-ecosystem-plan.md).
 
 ## 1. System Architecture
 
@@ -33,7 +40,8 @@ Key boundary: `airplane-core` owns rules, verifier, pipeline, and pack loading. 
 ```mermaid
 flowchart TB
   subgraph PhoneNet["Same Wi-Fi or iPhone Personal Hotspot LAN"]
-    Phone["iPhone Safari\nhttp://192.168.x.x:8099"]
+    Phone["iPhone Safari\nhttps://192.168.x.x:8443"]
+    Proxy["local HTTPS proxy\n0.0.0.0:8443"]
     MacWeb["Mac airplane-web\n0.0.0.0:8099"]
   end
 
@@ -47,14 +55,19 @@ flowchart TB
     SlackAPI["hooks.slack.com\nSlack API"]
   end
 
-  Phone -->|"local HTTP"| MacWeb
+  Phone -->|"local HTTPS"| Proxy
+  Proxy -->|"local HTTP"| MacWeb
+  Phone -.->|"setup / fallback HTTP"| MacWeb
   MacWeb -->|"loopback HTTP"| Model
   MacWeb -->|"local OS call"| Keychain
   MacWeb -->|"local file IO"| LocalStore
   MacWeb -->|"HTTPS, clean payload only"| SlackAPI
 ```
 
-Use `http://192.168.1.88:8099/` for the current Mac on this network. If the phone cannot connect, switch both devices onto the iPhone Personal Hotspot and use the `172.20.10.x:8099` address printed by `./run.sh web`.
+Use `https://192.168.1.88:8443/` for Browser GPU on the current Mac network.
+If the phone cannot connect, switch both devices onto the iPhone Personal
+Hotspot and use the `172.20.10.x` address printed by `./run.sh web` or
+`./run.sh https-proxy` with the same `:8443` secure route when available.
 
 Do not use a public tunnel for the dictation path during the demo. The raw synthetic note should stay on the local phone-to-Mac link.
 

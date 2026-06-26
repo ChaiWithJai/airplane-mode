@@ -4,6 +4,11 @@ Airplane Mode is a reference architecture for moving a sensitive workflow to the
 edge. It is written first for adopters who need a safer operating pattern, and
 second for builders who want to extend the inference runtime.
 
+The repo's narrative anchor is Jai's intro note:
+[`../bonsai-ecosystem-plan.md`](../bonsai-ecosystem-plan.md). This architecture
+is the concrete case study for that theme: dogfood Bonsai on a sensitive
+healthcare coaching workflow, name the limits, and leave a reusable reference.
+
 ## 1. End-User View
 
 The job is simple:

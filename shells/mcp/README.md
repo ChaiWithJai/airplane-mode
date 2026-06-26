@@ -26,3 +26,12 @@ printf '%s\n' \
 
 Calling `airplane_scrub` needs the same local model server as the CLI:
 `./scripts/serve-model.sh`.
+
+To prove the MCP shell matches the CLI on the same golden notes:
+
+```bash
+./scripts/smoke-mcp-cli-parity.sh
+```
+
+The smoke defaults to the first three golden notes so it stays quick during demos.
+Run all notes with `MCP_PARITY_LIMIT=20 ./scripts/smoke-mcp-cli-parity.sh`.

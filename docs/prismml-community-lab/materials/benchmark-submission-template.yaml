@@ -1,0 +1,191 @@
+title:
+submitter:
+date:
+
+end_user_case:
+  workflow:
+  user_or_org:
+  why_local_matters:
+  acceptable_latency:
+  acceptable_quality:
+  notes:
+
+hardware:
+  device:
+  cpu:
+  gpu:
+  ram:
+  vram:
+  os:
+  browser_if_relevant:
+  power_mode:
+
+model:
+  name:
+  artifact:
+  size:
+  quant_format:
+  source_url:
+  hash_if_available:
+
+runtime:
+  backend:
+  version:
+  command_or_entrypoint:
+  install_notes:
+  network_required:
+  cache_or_offline_behavior:
+  known_limitations:
+
+sampling:
+  temperature:
+  top_k:
+  top_p:
+  seed_if_available:
+  context_length:
+
+results:
+  cold_start_seconds:
+  warm_start_seconds:
+  first_token_latency_seconds:
+  tokens_per_second:
+  peak_ram:
+  peak_vram:
+  output_quality_notes:
+  failure_modes:
+  screenshots_or_logs:
+
+parity:
+  baseline_backend:
+  comparison_method: temp0_smoke | output_diff | structured_contract | logit_kl | workflow_parity | not_tested
+  observed_drift:
+  confidence:
+
+artifacts:
+  logs:
+  screenshots:
+  repo_or_demo_url:
+  reproduction_notes:
+
+# =====================================================================
+# WORKED EXAMPLES (real numbers from the repo — proof of the format,
+# and an honest record of what is measured vs. not).
+# =====================================================================
+---
+title: Airplane Mode PHI scrub — full eval (Mac edge node)
+submitter: chaiwithjai
+date: 2026-06-25
+
+end_user_case:
+  workflow: scrub a synthetic coaching note locally, then gate egress (only a clean record leaves)
+  user_or_org: mental-health coaching practice (synthetic)
+  why_local_matters: sensitive notes never leave the operator's machine
+  acceptable_latency: a few seconds per note for a live demo
+  acceptable_quality: recall-first — recall >= 99% and zero leakage on the golden set
+  notes: synthetic-only; scrubbed/redacted, not legally "de-identified"; not a medical device
+
+hardware:
+  device: MacBook (Apple Silicon, M4 Pro)
+  cpu: M4 Pro
+  gpu: Apple Metal
+  ram: 24GB
+  vram: unified
+  os: macOS
+  browser_if_relevant: n/a
+  power_mode: plugged in
+
+model:
+  name: Ternary-Bonsai-1.7B
+  artifact: Ternary-Bonsai-1.7B-F16.gguf
+  size: ~3.2GB
+  quant_format: F16
+  source_url: https://huggingface.co/prism-ml/Ternary-Bonsai-1.7B-gguf (Apache-2.0)
+  hash_if_available: pinned by run.sh fetch-by-hash
+
+runtime:
+  backend: llama.cpp (llama-server, OpenAI-compatible :8080)
+  version: stock Homebrew llama.cpp
+  command_or_entrypoint: ./scripts/serve-model.sh ; ./run.sh eval
+  install_notes: brew install llama.cpp
+  network_required: no (local; model fetched once)
+  cache_or_offline_behavior: model cached locally after first fetch
+  known_limitations: laptop edge node, NOT phone-local
+
+sampling:
+  temperature: 0.5
+  top_k: 20
+  top_p: 0.85
+  seed_if_available: 5 seeded passes (seeds 42..) unioned, grammar-constrained JSON
+  context_length: per-note
+
+results:
+  cold_start_seconds: model load on first serve
+  warm_start_seconds: n/a
+  first_token_latency_seconds: not isolated
+  tokens_per_second: not isolated (full eval = 105 serial Bonsai calls over 21 notes)
+  peak_ram: ~3.2GB model resident
+  peak_vram: unified
+  output_quality_notes: "recall 100.0% (71/71); hard-case 100.0% (55/55); leakage 0; precision 51.1%; over-redactions 68"
+  failure_modes: over-redaction (recall-first tradeoff, reported not hidden)
+  screenshots_or_logs: eval/golden-run.txt
+
+parity:
+  baseline_backend: llama.cpp F16
+  comparison_method: workflow_parity
+  observed_drift: gate holds (default-deny) on this backend; cross-backend parity not yet run
+  confidence: high for this backend; cross-backend untested
+
+artifacts:
+  logs: eval/golden-run.txt
+  screenshots: n/a
+  repo_or_demo_url: https://github.com/ChaiWithJai/airplane-mode
+  reproduction_notes: ./scripts/serve-model.sh && ./run.sh eval
+---
+title: Airplane Mode scrub — browser-GPU path (HONEST GAP example)
+submitter: chaiwithjai
+date: 2026-06-25
+
+end_user_case:
+  workflow: same scrub workflow, browser-GPU backend selectable; phone as the eventual edge
+  user_or_org: synthetic
+  why_local_matters: if the browser can run it, the phone becomes the edge node
+  acceptable_latency: TBD — not yet measured phone-local
+  acceptable_quality: same gate must hold
+  notes: this entry exists to record what is NOT proven yet
+
+hardware:
+  device: iPhone (browser) + Mac edge fallback
+  os: iOS 26 / macOS
+  browser_if_relevant: Safari 26 (WebGPU)
+
+model:
+  name: Bonsai-1.7B (ONNX)
+  artifact: onnx-community/Bonsai-1.7B-ONNX, dtype q1
+  size: model_q1.onnx_data = 290,552,764 bytes (cached on first-party edge)
+  quant_format: q1 (ONNX)
+  source_url: Hugging Face (mirrored to first-party /vendor + /models cache)
+
+runtime:
+  backend: "@huggingface/transformers, device: webgpu"
+  command_or_entrypoint: bonsai-worker.js behind /api/browser-spans (verifier-gated)
+  network_required: first load only (then cached)
+  cache_or_offline_behavior: transformers.js (431,974 bytes) + q1 weight cached locally
+  known_limitations: phone can LOAD the runtime/model; phone-local GENERATION not captured
+
+results:
+  tokens_per_second: NOT CAPTURED (no phone-local generation measured)
+  output_quality_notes: "/api/scrub (Mac edge) 16.53s; browser-gpu fallback 13.60s / 15.79s / 10.89s; gate_pass true; residual_count 0"
+  failure_modes: "Safari local-HTTP not a secure context; devicectl error 10005 (Developer Mode off); phone-observe 12s timeout"
+  screenshots_or_logs: docs/browser-gpu-spike-report.md
+
+parity:
+  baseline_backend: llama.cpp F16 (Mac edge)
+  comparison_method: not_tested
+  observed_drift: unknown — only Mac-edge fallback measured
+  confidence: low (load proven, generation unproven)
+
+artifacts:
+  logs: docs/browser-gpu-spike-report.md
+  repo_or_demo_url: https://github.com/ChaiWithJai/airplane-mode
+  reproduction_notes: "what we want from the community: a real phone-local tokens/sec on this path"
+

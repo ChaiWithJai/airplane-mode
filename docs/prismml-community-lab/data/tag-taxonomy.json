@@ -1,0 +1,39 @@
+{
+  "cohorts": [
+    "runtime_builder",
+    "local_ai_tool_builder",
+    "app_builder",
+    "hardware_perf_tester",
+    "research_hacker",
+    "ecosystem_maintainer",
+    "end_user_proxy",
+    "business_strategy",
+    "general_community"
+  ],
+  "intents": [
+    "showcase",
+    "question",
+    "support_or_failure",
+    "benchmark_or_validation",
+    "idea_or_roadmap",
+    "business_question",
+    "collaboration_offer",
+    "discussion"
+  ],
+  "action_areas": [
+    "onnx_webgpu_browser_support",
+    "cpu_performance_benchmarks",
+    "runtime_parity_harness",
+    "what_runs_where_docs",
+    "roadmap_positioning_clarity",
+    "community_hardware_lab",
+    "end_user_case_studies",
+    "general_signal"
+  ],
+  "impact_levels": {
+    "P0_act_now": "Concrete, repeated, feasible, tied to adoption or trust.",
+    "P1_program": "Valuable as a coordinated community program or recurring surface.",
+    "P2_track_research": "Strategically interesting, but not an immediate operating artifact.",
+    "P3_acknowledge": "Low-certainty, broad, playful, or too speculative to drive work."
+  }
+}

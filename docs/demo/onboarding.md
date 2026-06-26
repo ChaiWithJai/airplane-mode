@@ -123,10 +123,10 @@ The Slack endpoint re-runs the verifier gate over the outgoing de-identified rec
 Preflight the current sink before the demo:
 
 ```bash
-curl http://localhost:8088/api/status | jq .slack
+curl http://localhost:8088/api/status | jq .
 ```
 
-Expect `"configured": true` and route `webhook` or `bot_token` for a real Slack post. If the route is `preview`, the UI will still run but the clean card will not leave the app.
+Expect `.model.reachable == true` before scrubbing. Expect `.slack.configured == true` and route `webhook` or `bot_token` for a real Slack post. If the Slack route is `preview`, the UI will still run but the clean card will not leave the app.
 
 ## Warnings
 

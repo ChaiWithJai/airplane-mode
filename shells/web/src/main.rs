@@ -265,7 +265,7 @@ fn handle_scrub(body: &str) -> Result<Value> {
     let redactions: Vec<Value> = res
         .redaction_map
         .iter()
-        .map(|s| json!({"text": s.text, "entity": s.entity, "layer": s.layer}))
+        .map(|s| json!({"entity": s.entity, "layer": s.layer}))
         .collect();
     let residual = match &res.gate {
         airplane_core::GateDecision::Block { residual } => residual.len(),
@@ -361,7 +361,9 @@ fn slack_bot_token(config: &SinkConfig) -> Option<String> {
 fn slack_status() -> Value {
     let config = match load_sink_config() {
         Ok(c) => c,
-        Err(e) => return json!({"configured": false, "route": "unavailable", "error": format!("{e:#}")}),
+        Err(e) => {
+            return json!({"configured": false, "route": "unavailable", "error": format!("{e:#}")})
+        }
     };
     let channel = slack_channel(&config);
     if std::env::var("SLACK_WEBHOOK_URL")
@@ -379,6 +381,17 @@ fn slack_status() -> Value {
         "route": "preview",
         "channel": channel,
         "error": "set SLACK_WEBHOOK_URL or SLACK_BOT_TOKEN"
+    })
+}
+
+fn model_status() -> Value {
+    let addr = std::net::SocketAddr::from(([127, 0, 0, 1], 8080));
+    let reachable =
+        std::net::TcpStream::connect_timeout(&addr, std::time::Duration::from_millis(120)).is_ok();
+    json!({
+        "reachable": reachable,
+        "route": "llama-server",
+        "url": "http://127.0.0.1:8080/v1/chat/completions"
     })
 }
 
@@ -430,6 +443,51 @@ fn slack_blocks(record: &Value) -> Value {
     ])
 }
 
+fn string_array(record: &Value, key: &str) -> Vec<String> {
+    record[key]
+        .as_array()
+        .map(|a| {
+            a.iter()
+                .filter_map(|v| v.as_str())
+                .map(str::to_string)
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+fn slack_outbound_text(record: &Value) -> String {
+    let mut parts = Vec::new();
+    if let Some(client) = record["client_pseudonym"].as_str() {
+        parts.push(format!("Client: {client}"));
+    }
+    if let Some(next) = record["next_touch"].as_str() {
+        parts.push(format!("Next touch: {next}"));
+    }
+    let themes = string_array(record, "themes");
+    if !themes.is_empty() {
+        parts.push(format!("Themes: {}", themes.join(" · ")));
+    }
+    if let Some(items) = record["commitments"].as_array() {
+        for item in items {
+            if let Some(text) = item["text"].as_str() {
+                let status = item["status"].as_str().unwrap_or("open");
+                parts.push(format!("Commitment: {text} · {status}"));
+            }
+        }
+    }
+    for follow_up in string_array(record, "follow_ups") {
+        parts.push(format!("Follow-up: {follow_up}"));
+    }
+    let risks = string_array(record, "risk_flags");
+    if !risks.is_empty() {
+        parts.push(format!("Risk flags: {}", risks.join(" · ")));
+    }
+    parts.push(
+        "de-identified · gate-clean · autonomy signals only · no name, no member ID".to_string(),
+    );
+    parts.join("\n")
+}
+
 fn slack_post(record: &Value) -> Result<()> {
     let config = load_sink_config()?;
     let blocks = slack_blocks(record);
@@ -474,7 +532,7 @@ fn handle_send(body: &str) -> Value {
         Ok(v) => v,
         Err(e) => return json!({"ok": false, "error": format!("parse request body: {e}")}),
     };
-    let text = trajectory_text(&input["record"]);
+    let text = slack_outbound_text(&input["record"]);
     if text.trim().is_empty() {
         return json!({"ok": false, "error": "Slack record is empty"});
     }
@@ -674,7 +732,8 @@ fn main() -> Result<()> {
                 );
             }
             ("GET", "/api/status") => {
-                let payload = json!({"ok": true, "slack": slack_status()}).to_string();
+                let payload = json!({"ok": true, "slack": slack_status(), "model": model_status()})
+                    .to_string();
                 let _ =
                     req.respond(tiny_http::Response::from_string(payload).with_header(json_header));
             }
@@ -835,6 +894,22 @@ credentials:
     fn slack_gate_blocks_residual_identifier_before_sink() {
         let blocked = handle_send(
             r#"{"record":{"themes":["member CM-204815"],"commitments":[],"follow_ups":[]}}"#,
+        );
+        assert_eq!(blocked["ok"], false, "{blocked}");
+        assert_eq!(blocked["residual_count"], 1, "{blocked}");
+        assert!(
+            blocked["error"]
+                .as_str()
+                .unwrap()
+                .contains("Slack gate blocked"),
+            "{blocked}"
+        );
+    }
+
+    #[test]
+    fn slack_gate_checks_client_and_all_rendered_fields_before_sink() {
+        let blocked = handle_send(
+            r#"{"record":{"client_pseudonym":"Maria Alvarez","themes":["routine"],"commitments":[{"text":"daily walk","status":"open"}],"follow_ups":["try once"],"risk_flags":[],"next_touch":"2026-06-30"}}"#,
         );
         assert_eq!(blocked["ok"], false, "{blocked}");
         assert_eq!(blocked["residual_count"], 1, "{blocked}");

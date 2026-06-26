@@ -6,15 +6,13 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#16120e">
 <title>Airplane Mode</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
     --bg:#e7e3d8; --paper:#f5f1e8; --card:#fcfaf4; --ink:#221f19; --mut:#6b6456;
     --line:#ece4d4; --gold:#b87814; --gold2:#c6912f; --green:#1f7a4d; --green2:#4fd08c;
     --red:#bf3b2b; --amber:#8a5a0f;
-    --sans:'Hanken Grotesk',-apple-system,system-ui,sans-serif; --mono:'JetBrains Mono',ui-monospace,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI',system-ui,sans-serif;
+    --mono:'SF Mono','SFMono-Regular',ui-monospace,Menlo,Consolas,monospace;
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
   html,body{margin:0;height:100%}
@@ -69,6 +67,16 @@
     font:800 16px var(--sans);box-shadow:0 18px 34px -20px rgba(184,120,20,.72)}
   .micbtn.listening{animation:pulse 1.25s ease-in-out infinite;background:linear-gradient(180deg,#1f7a4d,#155f3a)}
   .micorb{width:33px;height:33px;border-radius:50%;background:rgba(255,255,255,.18);display:inline-flex;align-items:center;justify-content:center;font-size:17px}
+  .captureTop{display:flex;align-items:center;gap:10px;margin-top:4px}
+  .brandMark{width:28px;height:28px;border-radius:9px;background:var(--ink);display:flex;align-items:center;justify-content:center;color:var(--gold2);font-size:14px;flex:none}
+  .captureHero{margin-top:14px;background:linear-gradient(180deg,#fffaf0,#f4ead7);border:1.5px solid #eadfca;border-radius:20px;padding:16px 16px 15px;box-shadow:0 18px 44px -36px rgba(80,55,18,.45)}
+  .captureHero h1{font-size:34px;line-height:.95;letter-spacing:0;margin-top:8px}
+  .sinkLine{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:13px;border-top:1px solid #eadfca;padding-top:11px}
+  .sinkBadges{display:flex;align-items:center;gap:5px;flex:none}
+  .sinkState{font:700 10px var(--mono);letter-spacing:0;border-radius:999px;padding:5px 8px;border:1px solid}
+  .sampleBtn{font:700 12px var(--sans);color:var(--gold);background:#f6ecd6;border:1px solid #e3c98a;border-radius:999px;padding:8px 11px;cursor:pointer}
+  .noteMeta{display:flex;align-items:center;justify-content:space-between;margin-top:10px}
+  .btn.disabled{background:#d9d0bd;color:#8a8273;cursor:default;box-shadow:none}
   .mono{font-family:var(--mono)}
   .grow{flex:1;min-height:0}
   .center{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
@@ -121,29 +129,39 @@ function toggleHTML(label, dark){
 
 // ---------- screens ----------
 const screens = {
- capturing(){ setDark(false); return `
-   <div style="display:flex;align-items:center;gap:9px;margin-top:4px">
-     <div style="width:26px;height:26px;border-radius:8px;background:var(--ink);display:flex;align-items:center;justify-content:center;color:var(--gold2);font-size:13px">✈</div>
-     <div style="font:700 15px var(--sans);letter-spacing:-.01em">New session</div>
-     <span class="pill" style="margin-left:auto;color:var(--amber);background:#f6ecd6;border:1px solid #e3c98a">✈ offline</span></div>
-   <div style="margin-top:15px;background:linear-gradient(180deg,#fffaf0,#f5edda);border:1.5px solid #eadfca;border-radius:18px;padding:15px 15px 14px">
+ capturing(){ setDark(false);
+   const hasNote = !!S.note.trim();
+   const slackConfigured = S.status&&S.status.slack&&S.status.slack.configured;
+   const slackRoute = S.status&&S.status.slack?`${S.status.slack.route} -> ${S.status.slack.channel||'#coach-records'}`:'checking sink';
+   const modelReachable = !!(S.status&&S.status.model&&S.status.model.reachable);
+   const canSpeech = !!speechRecognitionCtor();
+   const dictLabel = S.listening ? 'Listening…' : (canSpeech ? 'Start dictation' : 'Use keyboard mic');
+   return `
+   <div class="captureTop">
+     <div class="brandMark">✈</div>
+     <div style="font:700 15px var(--sans);letter-spacing:0">New session</div>
+     <span class="pill" style="margin-left:auto;color:var(--amber);background:#f6ecd6;border:1px solid #e3c98a">offline</span></div>
+   <div class="captureHero">
      <div class="mono" style="font-size:10px;color:#a39a86;letter-spacing:.08em">CAPTURE</div>
-     <div style="font:800 31px/.95 var(--sans);letter-spacing:-.02em;margin-top:7px">Dictate the session</div>
-     <div class="sub" style="margin-top:8px;font-size:13px">Raw words stay at the edge until the verifier unlocks egress.</div>
-     <div class="mono" style="margin-top:10px;font-size:10px;color:${S.status&&S.status.slack&&S.status.slack.configured?'var(--green)':'var(--amber)'}">
-       Slack ${S.status&&S.status.slack&&S.status.slack.configured?'live':'preview'} · ${esc(S.status&&S.status.slack?`${S.status.slack.route} → ${S.status.slack.channel||'#coach-records'}`:'checking sink')}
-     </div>
+     <h1>Dictate the session</h1>
      <button class="micbtn ${S.listening?'listening':''}" data-act="dictate" style="margin-top:13px">
-       <span class="micorb">${S.listening?'■':'🎙'}</span><span>${S.listening?'Listening…':'Start dictation'}</span>
+       <span class="micorb">${S.listening?'■':'🎙'}</span><span>${dictLabel}</span>
      </button>
-     <div class="mono" style="height:14px;margin-top:8px;font-size:10px;color:${S.speechMsg?'var(--amber)':'#a39a86'}">${esc(S.speechMsg||'on-device capture · offline first')}</div>
+     <div class="sinkLine">
+       <div id="captureMsg" class="mono" style="font-size:10px;color:${S.speechMsg?'var(--amber)':'#a39a86'}">${esc(S.speechMsg||'edge capture · verifier gated')}</div>
+       <div class="sinkBadges">
+         <span class="sinkState" style="color:${modelReachable?'var(--green)':'var(--amber)'};background:${modelReachable?'#e6f0e7':'#f6ecd6'};border-color:${modelReachable?'#bfdcc6':'#e3c98a'}">model ${modelReachable?'ready':'off'}</span>
+         <span class="sinkState" style="color:${slackConfigured?'var(--green)':'var(--amber)'};background:${slackConfigured?'#e6f0e7':'#f6ecd6'};border-color:${slackConfigured?'#bfdcc6':'#e3c98a'}">Slack ${slackConfigured?'live':'preview'}</span>
+       </div>
+     </div>
+     <div class="mono" style="margin-top:7px;font-size:9px;color:#a39a86;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(slackRoute)}</div>
    </div>
    <textarea id="noteInput" class="note" style="margin-top:12px" placeholder="Session note appears here…" oninput="S.note=this.value">${esc(S.note)}</textarea>
-   <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px">
-     <button data-act="sample" style="font:700 12px var(--sans);color:var(--gold);background:transparent;border:0;padding:0;cursor:pointer;border-bottom:1px solid #e3c98a">Use sample</button>
-     <span class="mono" style="font-size:10px;color:#8a8273">${S.note.trim()?S.note.trim().split(/\s+/).length:0} words</span></div>
+   <div class="noteMeta">
+     <button data-act="sample" class="sampleBtn">Use sample note</button>
+     <span id="wordCount" class="mono" style="font-size:10px;color:#8a8273">${S.note.trim()?S.note.trim().split(/\s+/).length:0} words</span></div>
    <div class="grow"></div>
-   <button class="btn" data-act="scrub">Scrub on device</button>`; },
+   <button class="btn ${hasNote?'':'disabled'}" data-act="scrub">${hasNote?'Scrub on device':'Waiting for note'}</button>`; },
 
  scrubbing(){ setDark(true,false);
    // error state
@@ -360,6 +378,7 @@ async function onAct(e){
   if(act==='dictate') return toggleDictation();
   if(act==='sample'){ S.note=NOTE; S.speechMsg='sample loaded'; return render(); }
   if(act==='scrub'){
+    if(e.currentTarget.classList.contains('disabled')){ focusNote(); return; }
     if(!S.note.trim()){ alert('Dictate or type a note first — or tap “Use a sample note”.'); return; }
     go('scrubbing'); return doScrub();
   }
@@ -378,15 +397,34 @@ function noteInput(){
   return document.getElementById('noteInput');
 }
 
+function speechRecognitionCtor(){
+  return window.SpeechRecognition || window.webkitSpeechRecognition;
+}
+
 function focusNote(){
   const n=noteInput();
   if(n){ n.focus(); const len=n.value.length; try{ n.setSelectionRange(len,len); }catch(_){} }
 }
 
+function setCaptureNote(text, msg){
+  S.note = text.trim();
+  if(msg) S.speechMsg = msg;
+  const n = noteInput();
+  if(n && S.screen==='capturing'){
+    n.value = S.note;
+    const wc = document.getElementById('wordCount');
+    if(wc) wc.textContent = `${S.note ? S.note.split(/\s+/).length : 0} words`;
+    const cm = document.getElementById('captureMsg');
+    if(cm) cm.textContent = S.speechMsg || 'edge capture · verifier gated';
+  } else {
+    render();
+  }
+}
+
 function toggleDictation(){
   if(S.listening && recognizer){ try{ recognizer.stop(); }catch(_){} S.listening=false; S.speechMsg='dictation stopped'; render(); return; }
   focusNote();
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const SpeechRecognition = speechRecognitionCtor();
   if(!SpeechRecognition){
     S.speechMsg='keyboard mic ready';
     render();
@@ -398,17 +436,17 @@ function toggleDictation(){
   recognizer.interimResults = true;
   recognizer.lang = 'en-US';
   let base = S.note.trim();
+  let finalTranscript = '';
   recognizer.onstart = ()=>{ S.listening=true; S.speechMsg='capturing voice'; render(); };
   recognizer.onresult = (event)=>{
-    let finalText='', interim='';
-    for(let i=event.resultIndex;i<event.results.length;i++){
+    let finalText = '', interim = '';
+    for(let i=0;i<event.results.length;i++){
       const txt=event.results[i][0].transcript.trim();
       if(event.results[i].isFinal) finalText += (finalText?' ':'') + txt;
       else interim += (interim?' ':'') + txt;
     }
-    const pieces=[base, finalText, interim].filter(Boolean);
-    S.note=pieces.join(' ').trim();
-    render();
+    finalTranscript = finalText;
+    setCaptureNote([base, finalTranscript, interim].filter(Boolean).join(' '), 'capturing voice');
   };
   recognizer.onerror = ()=>{ S.listening=false; S.speechMsg='keyboard mic ready'; render(); setTimeout(focusNote,0); };
   recognizer.onend = ()=>{ S.listening=false; if(!S.speechMsg) S.speechMsg='dictation captured'; render(); };

@@ -99,7 +99,18 @@ fn pseudonym(redactions: &[Span]) -> String {
         .unwrap_or("client");
     let mut h = std::collections::hash_map::DefaultHasher::new();
     person.to_lowercase().hash(&mut h);
-    format!("CLIENT-{:04X}", (h.finish() as u16))
+    let adjectives = [
+        "steady", "open", "calm", "clear", "ready", "grounded", "bright", "patient",
+    ];
+    let nouns = [
+        "path", "harbor", "maple", "ridge", "anchor", "circle", "garden", "north",
+    ];
+    let hash = h.finish() as usize;
+    format!(
+        "client {} {}",
+        adjectives[hash % adjectives.len()],
+        nouns[(hash / adjectives.len()) % nouns.len()]
+    )
 }
 
 fn structure(model: &LlamaServer, scrubbed: &str) -> Value {
@@ -117,7 +128,7 @@ fn structure(model: &LlamaServer, scrubbed: &str) -> Value {
     let sys = "You are a coaching scribe. From this DE-IDENTIFIED session note, produce a structured \
                care record. themes: 1-3 short noun phrases (2-3 words each). commitments: each is a \
                SHORT action phrase the client agreed to (e.g. '10-min morning walk'), NOT a full \
-               sentence, status 'open'. next_touch: a date YYYY-MM-DD. Never include redaction tokens \
+               sentence, status 'open'. next_touch: either 'scheduled' or 'unset'; never an exact date. Never include redaction tokens \
                like [PERSON]. JSON only.";
     let raw_rec = match model.chat(
         sys,
@@ -185,7 +196,13 @@ fn sanitize_record(rec: &Value, scrubbed: &str) -> Value {
         })
         .take(2)
         .collect();
-    json!({ "themes": themes, "commitments": commitments, "next_touch": rec["next_touch"].as_str().unwrap_or("") })
+    let next_touch = rec["next_touch"].as_str().unwrap_or("").trim();
+    let next_touch = if next_touch.is_empty() || looks_junk(next_touch) {
+        "unset"
+    } else {
+        "scheduled"
+    };
+    json!({ "themes": themes, "commitments": commitments, "next_touch": next_touch })
 }
 
 fn fallback_themes(scrubbed: &str) -> Vec<String> {
@@ -1036,6 +1053,52 @@ credentials:
                 .contains("Slack gate blocked"),
             "{blocked}"
         );
+    }
+
+    #[test]
+    fn generated_pseudonym_is_not_identifier_shaped_for_slack_gate() {
+        let label = pseudonym(&[Span::new("Maria Alvarez", "PERSON", "rules")]);
+        assert!(label.starts_with("client "), "{label}");
+        assert!(!label.chars().any(|c| c.is_ascii_digit()), "{label}");
+
+        let record = json!({
+            "client_pseudonym": label,
+            "themes": ["routine"],
+            "commitments": [{"text":"daily walk","status":"open"}],
+            "follow_ups": ["try once"],
+            "risk_flags": [],
+            "next_touch": "scheduled"
+        });
+        let pack = Pack::load(&pack_path()).unwrap();
+        let decision = VerifierGate::new(&pack.rules).check(&slack_outbound_text(&record));
+        assert!(matches!(decision, GateDecision::Pass), "{decision:?}");
+    }
+
+    #[test]
+    fn sanitize_record_clamps_exact_next_touch_dates_before_slack() {
+        let record = sanitize_record(
+            &json!({
+                "themes": ["daily movement"],
+                "commitments": [{"text":"morning walk","status":"open"}],
+                "next_touch": "2026-06-30"
+            }),
+            "committed to a morning walk",
+        );
+        assert_eq!(record["next_touch"], "scheduled");
+
+        let outbound = slack_outbound_text(&json!({
+            "client_pseudonym": "client steady path",
+            "themes": record["themes"],
+            "commitments": record["commitments"],
+            "follow_ups": ["try once"],
+            "risk_flags": [],
+            "next_touch": record["next_touch"]
+        }));
+        let pack = Pack::load(&pack_path()).unwrap();
+        assert!(matches!(
+            VerifierGate::new(&pack.rules).check(&outbound),
+            GateDecision::Pass
+        ));
     }
 
     #[test]

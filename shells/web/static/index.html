@@ -470,12 +470,16 @@ async function doSend(){
   // real Slack post, with a minimum dwell so the flush animation reads
   const post = fetch('/api/send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({record:S.result.record})})
     .then(r=>r.json()).catch(()=>({ok:false,error:'could not reach the sink'}));
-  const trajectory = fetch('/api/trajectory',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({record:S.result.record})})
-    .then(r=>r.json()).catch(()=>({ok:false,error:'trajectory store unavailable'}));
-  const [data,traj] = await Promise.all([post, trajectory, new Promise(r=>setTimeout(r,1900))]);
+  const [data] = await Promise.all([post, new Promise(r=>setTimeout(r,1900))]);
   S.posted = !!data.ok; S.sendNote = data.ok ? '' : (data.error||'');
-  if(traj.ok){ S.trajectoryCount = traj.count; S.trajectoryNote = 'trajectory stored · gate-clean'; }
-  else { S.trajectoryNote = traj.error || 'trajectory not stored'; }
+  if(data.ok){
+    const traj = await fetch('/api/trajectory',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({record:S.result.record})})
+      .then(r=>r.json()).catch(()=>({ok:false,error:'trajectory store unavailable'}));
+    if(traj.ok){ S.trajectoryCount = traj.count; S.trajectoryNote = 'trajectory stored · gate-clean'; }
+    else { S.trajectoryNote = traj.error || 'trajectory not stored'; }
+  } else {
+    S.trajectoryNote = 'trajectory not stored · Slack send failed';
+  }
   go('delivered');
 }
 

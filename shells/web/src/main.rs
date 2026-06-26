@@ -294,7 +294,7 @@ fn handle_scrub(body: &str) -> Result<Value> {
     }))
 }
 
-// ---- the Slack sink (real post via incoming webhook) -------------------------
+// ---- the Slack sink (real post via webhook or bot token) ---------------------
 // The DE-IDENTIFIED record is what leaves — the clean thing, never the identifiers.
 
 #[derive(Debug, Deserialize)]

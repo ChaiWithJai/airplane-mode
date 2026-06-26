@@ -87,7 +87,9 @@ The fix is to put both devices on the iPhone's own local network:
 
 ## Wire Slack — the real post (the payoff)
 
-By default the record shows as a **preview**. To make it actually land in a Slack channel — so your audience can open Slack and evaluate the clean record — set up an **incoming webhook** (2 minutes, no OAuth):
+By default the record shows as a **preview**. To make it actually land in a Slack channel — so your audience can open Slack and evaluate the clean record — provide one runtime credential. Secrets are sourced from the environment or macOS Keychain and are never committed.
+
+### Fast path: incoming webhook
 
 1. Go to **https://api.slack.com/apps** → **Create New App** → **From scratch** → name it "Airplane Mode", pick your workspace.
 2. **Incoming Webhooks** → toggle **On** → **Add New Webhook to Workspace** → choose the channel (e.g. `#coach-records`) → **Allow** → copy the URL (`https://hooks.slack.com/services/...`).
@@ -98,7 +100,25 @@ By default the record shows as a **preview**. To make it actually land in a Slac
    On startup it prints `slack: SLACK_WEBHOOK_URL set — records post for real`.
 4. Run the demo. When the queue flushes, the **de-identified record posts to that Slack channel for real** — no name, no member ID. Open Slack on the big screen and evaluate it.
 
-The webhook is a secret — it's read from the environment and never committed. Without it the demo still runs (the delivered screen shows "Held · set SLACK_WEBHOOK_URL").
+### Pack-routed path: bot token + channel map
+
+Use this when you want the channel to come from `packs/coach-session/sink.yaml` (`channelMap.default`), or when incoming webhooks are not available.
+
+1. Create or use a Slack app with `chat:write`.
+2. Install it into the workspace and copy the bot token (`xoxb-...`).
+3. Either pass it in the environment:
+   ```bash
+   SLACK_BOT_TOKEN='xoxb-...' SLACK_CHANNEL='#coach-records' ./run.sh web
+   ```
+   Or put it in Keychain under the pack's configured ref:
+   ```bash
+   security add-generic-password -a "$USER" -s slack-bot-token -w 'xoxb-...'
+   ./run.sh web
+   ```
+   If `SLACK_CHANNEL` is absent, the sink routes to `channelMap.default` in `sink.yaml`.
+4. On startup it prints `slack: SLACK_BOT_TOKEN set — records post to #coach-records`.
+
+The Slack endpoint re-runs the verifier gate over the outgoing de-identified record before posting. A residual identifier blocks the send before Slack credentials are used. Without a webhook or bot token, the demo still runs and the delivered screen explains which credential to set.
 
 ## Warnings
 

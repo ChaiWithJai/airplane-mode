@@ -14,6 +14,7 @@ case "$verb" in
   gates)  build; "$BIN" gates ;;
   web)    cargo build -q --bin airplane-web; target/debug/airplane-web ;;
   mcp)    cargo build -q --bin airplane-mcp; target/debug/airplane-mcp ;;
+  slack-smoke) shift; ./scripts/smoke-slack-sink.sh "$@" ;;
   help|*) cat <<'EOF'
 Airplane Mode — run.sh   (on-device PHI scrubber; CLI shell over airplane-core)
   ./run.sh eval            check recall/leakage against eval/golden-run.txt
@@ -22,10 +23,12 @@ Airplane Mode — run.sh   (on-device PHI scrubber; CLI shell over airplane-core
   ./run.sh gates           run the harness gates
   ./run.sh web             serve the Beat 1 demo UI (http://localhost:8088, LAN-accessible)
   ./run.sh mcp             start the stdio MCP shell (agent-callable scrub tool)
+  ./run.sh slack-smoke     post one synthetic gate-clean record through the Slack sink
 
 Needs the model layer running:  ./scripts/serve-model.sh
 Tune contextual passes:         AIRPLANE_EVAL_PASSES=5 ./run.sh eval --update
 Use a different pack:           PACK=packs/my-pack ./run.sh gates
+Slack smoke target:             AIRPLANE_WEB_URL=http://127.0.0.1:8099 ./run.sh slack-smoke
 EOF
   ;;
 esac

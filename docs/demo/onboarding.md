@@ -133,6 +133,14 @@ curl http://localhost:8088/api/status | jq .
 
 Expect `.model.reachable == true` before scrubbing. Expect `.slack.configured == true` and route `webhook` or `bot_token` for a real Slack post. If the Slack route is `preview`, the UI will still run but the clean card will not leave the app.
 
+After Slack is configured, prove the app-originated sink without dictation:
+
+```bash
+AIRPLANE_WEB_URL=http://127.0.0.1:8099 ./run.sh slack-smoke
+```
+
+That smoke posts one synthetic, gate-clean record through `/api/send`. It fails before posting if the model is unreachable, Slack is still in preview mode, or the verifier blocks the outbound record.
+
 ## Warnings
 
 - **Do NOT put the phone in REAL airplane mode.** That drops Wi-Fi/hotspot and the phone can't reach the Mac. The **"Airplane mode" toggle IN THE APP** is the demo control — that's the one you flip.

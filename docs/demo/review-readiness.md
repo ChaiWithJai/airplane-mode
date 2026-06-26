@@ -10,7 +10,10 @@ production implementation.
 - Status preflight: `curl http://127.0.0.1:8099/api/status | jq .`
 - Current local Slack state: `route: preview`, `configured: false`
 - Reason: no `SLACK_WEBHOOK_URL`, no `SLACK_BOT_TOKEN`, and no Keychain
-  `slack-bot-token` on this machine.
+  `slack-webhook-url` / `slack-bot-token` on this machine.
+- Slack channel: `#coach-records` exists in Jai's Slack workspace; app-originated
+  posting still requires installing the repo manifest and storing the generated
+  webhook or bot token locally.
 
 The app now reports Slack and local model readiness on screen 1 before dictation starts.
 A real Slack post requires one runtime credential; see `docs/demo/onboarding.md`.
@@ -26,6 +29,7 @@ cargo test -p airplane-web
 cargo clippy -p airplane-web --all-targets -- -D warnings
 ./run.sh eval --check
 ./run.sh gates
+AIRPLANE_WEB_URL=http://127.0.0.1:8099 ./run.sh slack-smoke   # after Slack credential install
 ./scripts/smoke-mcp-cli-parity.sh
 PACK=packs/coach-session MCP_PARITY_LIMIT=1 ./scripts/smoke-mcp-cli-parity.sh
 (cd shells/ios && swift test)
@@ -53,7 +57,7 @@ The current committed eval target is `eval/golden-run.txt`:
 | #7 Precision tuning | Improved, still recall-first | Precision tracked; over-redactions reduced while keeping 100% recall / 0 leakage. Remaining extras are privacy-conservative. |
 | #8 MCP shell | Covered for smoke/parity | `shells/mcp`; `./run.sh mcp`; `scripts/smoke-mcp-cli-parity.sh` compares CLI/MCP scrubbed text on golden notes. |
 | #9 iOS/R1 | Simulator artifact only; hardware blocked | `shells/ios` Swift package proves choreography only; `docs/ios-shell-scaffold.md` documents non-claims. Real mlx-swift/R1 measurement still requires physical device. |
-| #10 Slack bot-token routing | Code covered; live credential missing | Web sink supports webhook, bot token, channel map, and Keychain lookup; `/api/send` gates the exact outbound Slack content before posting; `/api/scrub` returns redaction entity/layer summaries to the browser without raw matched text; local preflight is currently preview mode. |
+| #10 Slack bot-token routing | Code covered; live credential missing | Web sink supports webhook, bot token, channel map, and Keychain lookup; `/api/send` gates the exact outbound Slack content before posting; `/api/scrub` returns redaction entity/layer summaries to the browser without raw matched text; `#coach-records` exists; `./run.sh slack-smoke` proves app-originated posting once a Slack app credential is installed. |
 | #11 Manifest/provenance | Stronger local gate; still not full Sigstore | Manifest/provenance gates now require the trusted GitHub Actions release identity, UUID-shaped Rekor references, coherent provenance source/ref, and SHA-256 digests for declared pack files. This catches local pack tampering but still does not perform Fulcio certificate validation or Rekor inclusion proof. |
 | #12 Determinism | Covered locally | `./run.sh eval` / `--check` compares the current report to committed `eval/golden-run.txt`; `--update` is the explicit mutation path. Golden report includes precision and 21 notes. |
 
@@ -63,4 +67,5 @@ The current committed eval target is `eval/golden-run.txt`:
 - Do not treat the current local Slack state as a successful app-originated Slack post.
   The sink is implemented and gated, but this machine lacks a credential.
 - The old manual Slack UI post demonstrates the content is usable in Slack, but the app
-  path needs `SLACK_WEBHOOK_URL` or `SLACK_BOT_TOKEN` before final demo review.
+  path needs `SLACK_WEBHOOK_URL`, `SLACK_BOT_TOKEN`, `slack-webhook-url`, or
+  `slack-bot-token` before final demo review.

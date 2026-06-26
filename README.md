@@ -155,6 +155,18 @@ wrap that runtime path in this repo's verifier gate. See
 [`docs/webgpu-vs-mlx.md`](docs/webgpu-vs-mlx.md) and
 [`docs/browser-gpu-spike-report.md`](docs/browser-gpu-spike-report.md).
 
+For a sovereign browser-GPU demo, warm the browser runtime and q1 Bonsai model
+artifacts before opening the phone UI:
+
+```bash
+./run.sh vendor-browser-runtime
+./run.sh vendor-browser-model
+```
+
+Those commands cache Transformers.js and the q1 ONNX artifacts under
+`.airplane/`. They are served back to the phone from this laptop at `/vendor/...`
+and `/models/...`; they are intentionally not committed to git.
+
 If you need HTTPS to test browser GPU behavior on a phone, do not tunnel the full
 scrub app through Cloudflare. Use local HTTPS for the real app:
 

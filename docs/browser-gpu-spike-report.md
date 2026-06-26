@@ -73,6 +73,9 @@ What we now have:
   <https://huggingface.co/spaces/webml-community/bonsai-webgpu>.
 - Documentation that the HF demo uses `onnx-community/Bonsai-1.7B-ONNX` through
   Transformers.js/WebGPU with `dtype: "q1"`.
+- A first-party browser runtime cache at `/vendor/transformers.js`.
+- A first-party q1 Bonsai model cache at
+  `/models/onnx-community/Bonsai-1.7B-ONNX/...`.
 
 What we do not have yet:
 
@@ -80,7 +83,6 @@ What we do not have yet:
   web shell.
 - A measured browser-span finalization from Jai's phone through
   `/api/browser-spans`.
-- Offline model caching proof.
 - A measured phone-local scrub on our synthetic coaching note.
 
 ### Motivation
@@ -290,6 +292,31 @@ Raw notes do not go to the CDN in either mode, but regulated end-user
 deployments should self-host or vendor that runtime behind the same first-party
 network.
 
+Model-artifact truth: Transformers.js resolves local model files from
+`/models/{model}/{file}`. The web worker sets `env.localModelPath = "/models/"`
+and the web server serves nested model artifacts from `.airplane/browser-models`.
+Warm that cache before a live demo:
+
+```bash
+./run.sh vendor-browser-model
+```
+
+The verified q1 cache for `onnx-community/Bonsai-1.7B-ONNX` contains:
+
+| Local route | Size |
+| --- | ---: |
+| `/models/onnx-community/Bonsai-1.7B-ONNX/config.json` | 1,981 bytes |
+| `/models/onnx-community/Bonsai-1.7B-ONNX/generation_config.json` | 290 bytes |
+| `/models/onnx-community/Bonsai-1.7B-ONNX/tokenizer.json` | 9,117,036 bytes |
+| `/models/onnx-community/Bonsai-1.7B-ONNX/tokenizer_config.json` | 4,598 bytes |
+| `/models/onnx-community/Bonsai-1.7B-ONNX/chat_template.jinja` | 4,063 bytes |
+| `/models/onnx-community/Bonsai-1.7B-ONNX/onnx/model_q1.onnx` | 503,681 bytes |
+| `/models/onnx-community/Bonsai-1.7B-ONNX/onnx/model_q1.onnx_data` | 290,552,764 bytes |
+
+This does not prove phone-local generation yet; it proves the phone can load the
+browser runtime/model from the first-party edge instead of from Hugging Face
+during the demo.
+
 The scrub result caught:
 
 - `PERSON` via Bonsai
@@ -325,9 +352,11 @@ not block the demo. It means phone observation comes through server telemetry:
 ./run.sh phone-observe
 ```
 
-Then open or refresh `http://192.168.1.88:8099` on the phone. A successful
-observation writes `.airplane/phone-capability-latest.json`; until then
-`/api/status` correctly reports `client_capability: null`.
+Then open or refresh the printed phone URL. For secure-context WebGPU testing,
+use the HTTPS proxy URL, for example `https://192.168.1.88:8443` or the matching
+LAN/hotspot IP printed by `./run.sh https-proxy`. A successful observation writes
+`.airplane/phone-capability-latest.json`; until then `/api/status` correctly
+reports `client_capability: null`.
 
 ## Optimal Path From Here
 

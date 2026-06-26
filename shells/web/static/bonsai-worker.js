@@ -23,6 +23,8 @@ async function loadTransformers() {
     transformersPromise = import(TRANSFORMERS_LOCAL)
       .catch(() => import(TRANSFORMERS_CDN))
       .then((mod) => {
+        mod.env.localModelPath = "/models/";
+        mod.env.allowLocalModels = true;
         stoppingCriteria ||= new mod.InterruptableStoppingCriteria();
         return mod;
       });
@@ -34,7 +36,7 @@ async function load(progress_callback = null) {
   await checkWebGpu();
   const { pipeline } = await loadTransformers();
   if (!generatorPromise) {
-    post("loading", { detail: "downloading Bonsai q1 ONNX weights" });
+    post("loading", { detail: "loading Bonsai q1 ONNX weights" });
     generatorPromise = pipeline("text-generation", MODEL_ID, {
       device: "webgpu",
       dtype: "q1",

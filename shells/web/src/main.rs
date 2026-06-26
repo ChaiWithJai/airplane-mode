@@ -23,6 +23,7 @@ const INDEX: &str = "shells/web/static/index.html";
 const GPU_PROBE: &str = "shells/web/static/gpu.html";
 const BONSAI_WORKER: &str = "shells/web/static/bonsai-worker.js";
 const BROWSER_VENDOR_DIR: &str = ".airplane/browser-vendor";
+const BROWSER_MODEL_DIR: &str = ".airplane/browser-models";
 const DEFAULT_ADDR: &str = "0.0.0.0:8099";
 const PASSES: u32 = 5;
 const SLACK_WEBHOOK_KEYCHAIN_REF: &str = "slack-webhook-url";
@@ -38,6 +39,35 @@ fn repo_path(rel: &str) -> PathBuf {
             .join("../..")
             .join(rel)
     }
+}
+
+fn browser_static_header(name: &str) -> tiny_http::Header {
+    let content_type = if name.ends_with(".json") {
+        "application/json"
+    } else if name.ends_with(".wasm") {
+        "application/wasm"
+    } else if name.ends_with(".js") || name.ends_with(".mjs") {
+        "text/javascript; charset=utf-8"
+    } else if name.ends_with(".jinja") || name.ends_with(".txt") {
+        "text/plain; charset=utf-8"
+    } else {
+        "application/octet-stream"
+    };
+    tiny_http::Header::from_bytes(&b"Content-Type"[..], content_type.as_bytes()).unwrap()
+}
+
+fn safe_relative_path(path: &str) -> Option<PathBuf> {
+    if path.is_empty() || path.starts_with('/') || path.contains('\\') {
+        return None;
+    }
+    let mut out = PathBuf::new();
+    for part in path.split('/') {
+        if part.is_empty() || part == "." || part == ".." {
+            return None;
+        }
+        out.push(part);
+    }
+    Some(out)
 }
 
 fn pack_path() -> PathBuf {
@@ -1196,6 +1226,33 @@ fn main() -> Result<()> {
                         let _ = req.respond(
                             tiny_http::Response::from_string(
                                 "browser runtime not vendored; run ./run.sh vendor-browser-runtime",
+                            )
+                            .with_status_code(404),
+                        );
+                    }
+                }
+            }
+            ("GET", path) if path.starts_with("/models/") => {
+                let name = path.trim_start_matches("/models/");
+                let Some(rel_path) = safe_relative_path(name) else {
+                    let _ = req.respond(
+                        tiny_http::Response::from_string("invalid model path")
+                            .with_status_code(400),
+                    );
+                    continue;
+                };
+                let model_path = repo_path(BROWSER_MODEL_DIR).join(rel_path);
+                match std::fs::read(&model_path) {
+                    Ok(bytes) => {
+                        let _ = req.respond(
+                            tiny_http::Response::from_data(bytes)
+                                .with_header(browser_static_header(name)),
+                        );
+                    }
+                    Err(_) => {
+                        let _ = req.respond(
+                            tiny_http::Response::from_string(
+                                "browser model not vendored; run ./run.sh vendor-browser-model",
                             )
                             .with_status_code(404),
                         );

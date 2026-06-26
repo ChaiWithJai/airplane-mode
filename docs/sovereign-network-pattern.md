@@ -18,6 +18,19 @@ raw note -> first-party network -> local edge -> verifier gate -> clean egress
 The raw note and redaction map stay inside the adopter-controlled boundary. Only
 the verifier-approved scrubbed record may leave for the configured sink.
 
+The same rule applies to demo dependencies. For the browser GPU path, cache the
+runtime and model artifacts on the first-party edge node before a live walkthrough:
+
+```bash
+./run.sh vendor-browser-runtime
+./run.sh vendor-browser-model
+```
+
+The phone can then fetch `/vendor/transformers.js` and
+`/models/onnx-community/Bonsai-1.7B-ONNX/...` from the laptop or managed edge
+node instead of pulling the runtime/model from a public CDN during the sensitive
+workflow.
+
 ## What Counts As First-Party
 
 Acceptable demo/adopter paths:
@@ -52,6 +65,8 @@ Airplane Mode data path.
 | Jai's laptop | clinic laptop, mini PC, edge server, or workstation |
 | Personal Hotspot / Wi-Fi | organization-owned LAN or VPN |
 | local HTTPS cert | IT-issued certificate or private CA |
+| `.airplane/browser-vendor` | approved internal runtime mirror |
+| `.airplane/browser-models` | approved internal model artifact mirror |
 | `packs/coach-session` | adopter's workflow pack |
 | Slack webhook | adopter's approved team channel or internal sink |
 

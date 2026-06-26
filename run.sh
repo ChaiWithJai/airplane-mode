@@ -18,6 +18,7 @@ case "$verb" in
   phone-observe) shift; ./scripts/wait-phone-capability.sh "$@" ;;
   https-proxy) shift; ./scripts/serve-local-https-proxy.sh "$@" ;;
   vendor-browser-runtime) shift; ./scripts/vendor-browser-runtime.sh "$@" ;;
+  vendor-browser-model) shift; ./scripts/vendor-browser-model.sh "$@" ;;
   mcp)    cargo build -q --bin airplane-mcp; target/debug/airplane-mcp ;;
   ios-sim) (cd shells/ios && swift test && swift build) ;;
   slack-smoke) shift; ./scripts/smoke-slack-sink.sh "$@" ;;
@@ -35,6 +36,8 @@ Airplane Mode — run.sh   (on-device PHI scrubber; CLI shell over airplane-core
   ./run.sh https-proxy     serve local HTTPS proxy for phone secure-context testing
   ./run.sh vendor-browser-runtime
                             download local Transformers.js runtime into .airplane/
+  ./run.sh vendor-browser-model
+                            download local Bonsai q1 browser model into .airplane/
   ./run.sh mcp             start the stdio MCP shell (agent-callable scrub tool)
   ./run.sh ios-sim         verify the simulator-safe iOS shell scaffold (no hardware proof)
   ./run.sh slack-smoke     post one synthetic gate-clean record through the Slack sink

@@ -145,7 +145,7 @@ Include:
 | Pattern | Anchor | Notes |
 | --- | --- | --- |
 | iOS simulator backend selector | `945760f` | Useful for native-shell contract work; not real-device inference proof. |
-| Browser GPU spike path | `2903800` through `4695492` | Useful for WebGPU/runtime work. Current main has the hardened version. |
+| Browser GPU spike path | `2903800` through `4695492` | Useful for WebGPU/runtime work. Current main has the hardened version; raw spike files are local-only unless promoted. |
 | HTTPS phone setup | `7159093`, `21d376f` | Useful for local secure-context demos. |
 | Proof/status page | `413379f`, `7a5134d` | Useful for demo telemetry and phone URL discovery. |
 | Early positioning docs | `68ebe67`, `e30d58c` | Useful for audience/register work, not runtime behavior. |

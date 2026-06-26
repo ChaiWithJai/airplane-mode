@@ -58,10 +58,10 @@ Until that measurement exists:
 - do not list iOS as a hardware-proven shell
 - label the current `shells/ios` package as simulator choreography + interop scaffolding only
 
-There is also a browser-first alternative now worth measuring. See
-[`docs/deprecations/spikes/webgpu-vs-mlx.md`](../spikes/webgpu-vs-mlx.md) for the comparison between native MLX
-Swift and browser WebGPU. The shared requirement is unchanged: local inference
-may vary, but the verifier gate still decides whether anything can leave.
+There is also a browser-first alternative now worth measuring. Keep raw runtime
+spikes local until they are promoted into a decision record or current guide.
+The shared requirement is unchanged: local inference may vary, but the verifier
+gate still decides whether anything can leave.
 
 ## Future Real File Map
 

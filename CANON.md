@@ -71,7 +71,6 @@ non-claims, and old pack/clinic framing moved under:
 
 ```text
 docs/deprecations/canon/
-docs/deprecations/spikes/
 docs/deprecations/deferred/
 ```
 

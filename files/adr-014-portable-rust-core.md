@@ -22,4 +22,5 @@ Ship three adapters in v1:
 - The *identical* recall-critical logic runs across runtimes → a reproduced recall number is meaningful.
 - Same artifact serves all three adoption audiences (developer reproduces on laptop, champion shows on phone, agent embeds via MCP).
 - **Supersedes** the "native Swift" stack rows in the docs above. Those need a one-line update (mechanical); CANON.md D1 is now resolved.
-- New port contract detail and the Bonsai-runtime reality live in `docs/superpowers/specs/2026-06-25-portable-core-architecture-design.md` and `docs/seed/bonsai-ecosystem-brief.md`.
+- Current port contract detail lives in `crates/airplane-core/README.md`,
+  `docs/demo/reference-architecture.md`, and `docs/seed/bonsai-ecosystem-brief.md`.

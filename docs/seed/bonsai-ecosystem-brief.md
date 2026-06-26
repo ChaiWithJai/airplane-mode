@@ -1,5 +1,7 @@
 # Bonsai Ecosystem Brief (scoped)
-*Distilled 2026-06-25 from isolated archeology over local sources: `full-ctx.md`, `~/projects/bonsai/` (scripts/serve.sh, docs, models), `~/projects/gemini-music` (branch `bonsai-local`), `~/projects/the-night-library/BONSAI_101.md`, and memory `prismml-bonsai-local-footguns`. Kept deliberately tight so it scopes the build without re-poisoning context.*
+*Distilled 2026-06-25 from isolated archeology over local research artifacts and
+adjacent Bonsai projects. Kept deliberately tight so it scopes the build without
+re-poisoning context with raw transcripts or spike scratch.*
 
 > **Disambiguation first:** PrismML's model is **`prism-ml/Bonsai-*`** (1.7B/4B/8B family, Caltech spinout, Apache 2.0, April 2026). It is **unrelated** to `deepgrove/Bonsai` (0.5B, 2025). AI summaries blend their specs — always check the HF org prefix.
 

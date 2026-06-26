@@ -163,9 +163,10 @@ backend modes. It does not prove real iPhone 11/A13 inference.
 
 For the next real phone path, start with the browser GPU route. The ecosystem has
 already proven a Bonsai WebGPU demo on Hugging Face, so the next dense move is to
-wrap that runtime path in this repo's verifier gate. The detailed WebGPU/MLX
-research lives in [`docs/deprecations/spikes/`](docs/deprecations/spikes/) so it
-does not crowd the core runbook.
+wrap that runtime path in this repo's verifier gate. Keep research spikes local
+until they are promoted into a decision record or current runbook; old runtime
+experiments are revived through the GitOps runbook, not linked from the starter
+path.
 
 For a sovereign browser-GPU demo, warm the browser runtime and q1 Bonsai model
 artifacts before opening the phone UI:

@@ -8,7 +8,7 @@
 
 ## 1. The seed and the goal
 
-- **Seed:** `full-ctx.md` — a research conversation about **PrismML**, the Caltech 1-bit "Bonsai" LLM company, and the investor thesis behind it (Khosla: *"intelligence per unit of energy and cost,"* not datacenter scale).
+- **Seed:** local-only raw research transcripts distilled into `docs/seed/bonsai-ecosystem-brief.md` and the current intro doc. Raw transcripts are intentionally not part of the public context graph.
 - **Goal:** make that bet *watchable*. **"Airplane Mode"** — a mental-health **coaching scribe** that runs Bonsai 1.7B entirely on a 2019 iPhone 11, de-identifies the session **on-device**, posts only a clean structured record to Slack, generates a client-paced follow-up, and grows a de-identified RL environment — with every ethical/legal rule enforced as an automated gate. The thesis is **"the data never leaves,"** and the value is **the loop**, not the note.
 
 > **Build status (2026-06-25):** the repo is now *seeded* for loop-engineering. The architecture is decided (ADR-014: portable Rust core + ports). The build runs as a harnessed loop — see **`AGENTS.md`** (operating manual) and **`backlog/`** (M0–M5 work queue). Bonsai ecosystem facts are scoped in **`docs/seed/bonsai-ecosystem-brief.md`**. No code is written yet; M0 (the golden-note truth set) is the first task.
@@ -19,7 +19,7 @@
 
 ```mermaid
 flowchart TD
-  CTX["full-ctx.md\n(PrismML seed / thesis)"]
+  CTX["local-only raw research\n(distilled into docs/seed/)"]
   CONST["ai-feature-constitution\n(10 articles · Hashimoto)"]
   SURVEY["phi-scrubber-technical-survey\n(BOM · 3-layer scrubber)"]
   PACK["clinic-pack-pattern\n(signed core + packs)"]
@@ -75,7 +75,7 @@ flowchart TD
 
 | Doc | Layer | Role | Status |
 |---|---|---|---|
-| `full-ctx.md` | Seed | PrismML/Bonsai research; the investor bet | Reference |
+| local-only raw research | Seed | PrismML/Bonsai research; the investor bet | Distilled into current docs |
 | `ai-feature-constitution.md` | Foundation | 10 articles (Hashimoto) + AI-or-not routing tree | Live (principles) |
 | `phi-scrubber-technical-survey.md` | Foundation | De-id BOM; 3-layer scrubber; Philter/Presidio | Live, **stale on framing** (clinical/Cityblock) |
 | `clinic-pack-pattern.md` | Foundation | Signed core + declarative packs | Live, **stale on format (HCL) + pack name** |
@@ -164,7 +164,7 @@ The corpus grew by accretion and several docs explicitly supersede others, so st
 
 | # | Conflict | Where it diverges | Recommended resolution |
 |---|---|---|---|
-| **D1** | ✅ **RESOLVED → ADR-014 (2026-06-25).** **Portable Rust core + ports; Swift is a thin shell.** `airplane-core` (Rust) owns rules executor + verifier gate + pipeline + pack loader; the model and platform concerns are ports (`InferenceProvider`, `SecureStore`, `Capture`, `Sink`). Three shells in v1: CLI, iOS (UniFFI), MCP. | was: survey, clinic-pack, eng-spec, component-design, RFC-002 §6 (Swift) | **Decided.** Record: `files/adr-014-portable-rust-core.md`. Rationale + architecture: `docs/superpowers/specs/2026-06-25-portable-core-architecture-design.md`. The "native Swift" stack rows in those docs are now superseded and need a one-line mechanical update. |
+| **D1** | ✅ **RESOLVED → ADR-014 (2026-06-25).** **Portable Rust core + ports; Swift is a thin shell.** `airplane-core` (Rust) owns rules executor + verifier gate + pipeline + pack loader; the model and platform concerns are ports (`InferenceProvider`, `SecureStore`, `Capture`, `Sink`). Three shells in v1: CLI, iOS (UniFFI), MCP. | was: survey, clinic-pack, eng-spec, component-design, RFC-002 §6 (Swift) | **Decided.** Record: `files/adr-014-portable-rust-core.md`. Current architecture: `docs/demo/reference-architecture.md`. The "native Swift" stack rows in those docs are now superseded and need a one-line mechanical update. |
 | **D2** | **Config format: HCL vs YAML/JSON.** `clinic-pack-pattern` uses `pack.hcl / policy.hcl / sink.hcl`. RFC-002 §6 explicitly **rejects HCL** ("less ecosystem fit for k8s demo") and switches to YAML + JSON. | clinic-pack-pattern (HCL) vs RFC-002, component-design (YAML/JSON) | RFC-002 wins. **Patch clinic-pack-pattern** file extensions `.hcl → .yaml`. Mechanical. |
 | **D3** | **Reference pack name: `cityblock-chp` vs `coach-session`.** | demo-spec, clinic-pack, survey (`cityblock-chp`, "CHP home visit", "nurse/patient") vs eng-spec, RFC-002, component-design (`coach-session`, "coach/client") | RFC-002 + the coach reframe win. The three clinical-framed docs are **pre-reframe** (see `coach-system-characterization` §0). Either re-label them or stamp them "pre-reframe — domain superseded to coaching." |
 | **D4** | **Legal/terminology frame: HIPAA/PHI vs MHMDA/consumer-health-data.** The repo is even *named* `phi-scrubber`, and "PHI" is used throughout — but ADR-008 + The Floor establish a coach is **not** a HIPAA covered entity; the binding law is **MHMDA-class**, and the data is "consumer health data," not "PHI." | survey/clinic-pack (HIPAA/BAA/PHI) vs the-floor, eng-spec ADR-001 (MHMDA) | Keep "PHI" as a colloquial label if you want, but **The Floor is canonical on law.** Worth a single glossary note so newcomers don't think this is a HIPAA product. |

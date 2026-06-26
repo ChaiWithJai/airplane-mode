@@ -1,3 +1,8 @@
+# Airplane Mode public graph policy:
+# commit the runnable starter, pack, gates, and durable docs;
+# keep raw research transcripts, spike scratch, generated runs, and local demo
+# artifacts private unless promoted into a decision record or current guide.
+
 # Models — NEVER commit weights (fetched by hash via run.sh)
 *.gguf
 *.mlx
@@ -7,7 +12,6 @@ weights/
 # Rust
 /target/
 **/target/
-Cargo.lock
 
 # Swift / iOS
 shells/ios/build/
@@ -27,20 +31,24 @@ venv/
 .env.*
 *.local
 .airplane/
+output/
 
 # OS / tooling
 .DS_Store
 .playwright-mcp/
 node_modules/
 
-# Spike scratch (keep reports, ignore raw runs)
-spike/runs/
-
-# Seed transcript — raw research convo, NOT for the public/PrismML-facing repo.
-# Kept locally as a seed; the distilled artifact is docs/seed/bonsai-ecosystem-brief.md
+# Research sausage / spikes
 full-ctx.md
-spike/server.log
+spike/
+docs/deprecations/spikes/
+docs/superpowers/
+docs/**/drafts/
+docs/**/scratch/
+docs/positioning/community-hardware-lab-framework.md
+
+# Generated reports and logs
 eval/last-run.json
-spike/*.log
-spike/web.log
+*.log
+*.tmp
 /*.png

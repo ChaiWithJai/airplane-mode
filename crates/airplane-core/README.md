@@ -14,4 +14,5 @@ The one thing we **own** and review every line of. Built at M1 (`backlog/m1.md`)
 
 **Never in here:** an HTTP client, mlx-swift, llama.cpp, Slack, file paths, raw PHI handling beyond the enclave port. If a platform detail is leaking into the core, the seam is wrong.
 
-Compiled to: a CLI bin, an MCP bin, and (via UniFFI) the iOS shell. See `docs/superpowers/specs/2026-06-25-portable-core-architecture-design.md`.
+Compiled to: a CLI bin, an MCP bin, and the simulator-safe iOS scaffold. See
+`files/adr-014-portable-rust-core.md` and `docs/demo/reference-architecture.md`.

@@ -21,3 +21,4 @@ Records in this folder:
 
 - [DR-2026-06-26: Core demo path](DR-2026-06-26-core-demo-path.md)
 - [DR-2026-06-26: Deprecated pattern index](DR-2026-06-26-deprecated-pattern-index.md)
+- [DR-2026-06-26: Public context graph](DR-2026-06-26-public-context-graph.md)

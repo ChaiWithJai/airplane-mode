@@ -6,7 +6,7 @@ The build is decomposed into milestones (M0–M5), each a file in this directory
 
 | Milestone | Goal | Reproduces / proves | Gate to advance |
 |---|---|---|---|
-| **M0.5** ⚡ | Feasibility spike — verify recall, on-device (R1), determinism | **the business case is buildable on 1.7B** | go/no-go `spike/REPORT.md` → Jai greenlights M1 |
+| **M0.5** ⚡ | Feasibility spike — verify recall, on-device (R1), determinism | **the business case is buildable on 1.7B** | local-only spike promoted into `eval/golden-run.txt` and the pack eval set |
 | **M0** | Author the `coach-session` pack + ~20 golden notes | the truth set exists | golden notes hand-labeled; schema valid |
 | **M1** | `airplane-core` (rules + gate + pipeline + pack loader) + ports + **CLI shell** + eval harness | **reproduction front door** — `./run.sh eval` matches `golden-run.txt` | `recall`, `leakage`, `pack-blindness` pass |
 | **M2** | Structurer + follow-up generator + Slack `Sink` | the full loop on desktop — `./run.sh demo` | all M1 gates + `reward-lint ★`, `scope-boundary ★` |

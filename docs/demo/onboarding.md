@@ -18,6 +18,8 @@ For architecture, network topology, and data-flow diagrams, see
 [`docs/demo/system-network-data-flows.md`](system-network-data-flows.md).
 For the current screen FSM, addressable state, and service failure meanings, see
 [`docs/demo/fsm-service-map.md`](fsm-service-map.md).
+For the source benchmark, stack rationale, and adoption proof, see
+[`docs/demo/stack-adoption-proof.md`](stack-adoption-proof.md).
 For the adopter/builder reference architecture, see
 [`docs/demo/reference-architecture.md`](reference-architecture.md).
 For a narrative walkthrough, verification guide, workload profile, and worked examples,

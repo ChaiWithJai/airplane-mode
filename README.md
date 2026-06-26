@@ -446,6 +446,7 @@ recover with Git when a builder has a real use case.
 | `docs/contracts/` | Shared JSON contract fixtures for shell/backend interoperability. |
 | `docs/demo/onboarding.md` | Phone demo and Slack runbook. |
 | `docs/demo/fsm-service-map.md` | Current service map, screen FSM, addressable state, and service failure meanings. |
+| `docs/demo/stack-adoption-proof.md` | Source benchmark, stack choices, runtime placement, and adoption proof. |
 | `docs/demo/reference-architecture.md` | CNCF-style adopter/builder reference architecture. |
 | `docs/extending.md` | Pack extension walkthrough. |
 | `docs/demo/how-the-demo-works.md` | Architecture, topology, workload profile, worked examples. |

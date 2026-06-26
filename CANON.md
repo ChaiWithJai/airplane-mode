@@ -38,9 +38,10 @@ dependency.
 2. [`README.md`](README.md) — run and understand the demo.
 3. [`docs/demo/onboarding.md`](docs/demo/onboarding.md) — phone, HTTPS, Slack.
 4. [`docs/demo/fsm-service-map.md`](docs/demo/fsm-service-map.md) — service map, screens, addressable state.
-5. [`docs/demo/how-the-demo-works.md`](docs/demo/how-the-demo-works.md) — architecture, topology, examples.
-6. [`docs/extending.md`](docs/extending.md) — change the pack for a hackathon.
-7. [`docs/deprecations/`](docs/deprecations/) — old patterns and revival.
+5. [`docs/demo/stack-adoption-proof.md`](docs/demo/stack-adoption-proof.md) — source benchmark, stack rationale, adoption proof.
+6. [`docs/demo/how-the-demo-works.md`](docs/demo/how-the-demo-works.md) — architecture, topology, examples.
+7. [`docs/extending.md`](docs/extending.md) — change the pack for a hackathon.
+8. [`docs/deprecations/`](docs/deprecations/) — old patterns and revival.
 
 ## Load-Bearing Decisions
 
@@ -51,6 +52,7 @@ dependency.
 | Build spec and trust boundary | [`files/rfc-002-final-ship.md`](files/rfc-002-final-ship.md) |
 | Deprecated pattern index | [`docs/deprecations/decision-records/DR-2026-06-26-deprecated-pattern-index.md`](docs/deprecations/decision-records/DR-2026-06-26-deprecated-pattern-index.md) |
 | Public context graph policy | [`docs/deprecations/decision-records/DR-2026-06-26-public-context-graph.md`](docs/deprecations/decision-records/DR-2026-06-26-public-context-graph.md) |
+| Stack and adoption proof | [`docs/demo/stack-adoption-proof.md`](docs/demo/stack-adoption-proof.md) |
 
 ## What Stays In The Main Path
 

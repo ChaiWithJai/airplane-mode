@@ -22,7 +22,7 @@ flowchart LR
   Traj["local trajectory store\n.airplane/trajectories.jsonl"]
   Slack["Slack #coach-records\nclean record only"]
 
-  Phone -->|"synthetic note over local HTTP"| Web
+  Phone -->|"synthetic note over local HTTPS proxy"| Web
   Web --> Core
   Core --> Pack
   Core -->|"scrubbed prompt only"| Model

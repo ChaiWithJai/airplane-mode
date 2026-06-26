@@ -14,6 +14,8 @@ For the diagram-only version, see
 [`system-network-data-flows.md`](system-network-data-flows.md).
 For the current screen FSM, service map, addressable routes, and incident-state
 meanings, see [`fsm-service-map.md`](fsm-service-map.md).
+For the source benchmark, stack rationale, runtime placement, and adoption proof,
+see [`stack-adoption-proof.md`](stack-adoption-proof.md).
 
 ## The Short Version
 

@@ -8,15 +8,16 @@ production implementation.
 
 - Web shell: `http://127.0.0.1:8099`
 - Status preflight: `curl http://127.0.0.1:8099/api/status | jq .`
-- Current local Slack state: `route: preview`, `configured: false`
-- Reason: no `SLACK_WEBHOOK_URL`, no `SLACK_BOT_TOKEN`, and no Keychain
-  `slack-webhook-url` / `slack-bot-token` on this machine.
-- Slack channel: `#coach-records` exists in Jai's Slack workspace; app-originated
-  posting still requires installing the repo manifest and storing the generated
-  webhook or bot token locally.
+- Current local Slack state: `route: webhook`, `configured: true`
+- Reason: the Slack app manifest was installed in Jai's A+ Active Services
+  workspace and the generated incoming webhook is stored in macOS Keychain as
+  `slack-webhook-url`.
+- Slack channel: `#coach-records` exists in Jai's Slack workspace and has received
+  app-originated posts from the `Airplane Mode` Slack app.
 
 The app now reports Slack and local model readiness on screen 1 before dictation starts.
-A real Slack post requires one runtime credential; see `docs/demo/onboarding.md`.
+On this machine, the webhook route is live; other machines still need one runtime
+credential as described in `docs/demo/onboarding.md`.
 
 ## Verified Commands
 
@@ -57,15 +58,13 @@ The current committed eval target is `eval/golden-run.txt`:
 | #7 Precision tuning | Improved, still recall-first | Precision tracked; over-redactions reduced while keeping 100% recall / 0 leakage. Remaining extras are privacy-conservative. |
 | #8 MCP shell | Covered for smoke/parity | `shells/mcp`; `./run.sh mcp`; `scripts/smoke-mcp-cli-parity.sh` compares CLI/MCP scrubbed text on golden notes. |
 | #9 iOS/R1 | Simulator artifact only; hardware blocked | `shells/ios` Swift package proves choreography only; `docs/ios-shell-scaffold.md` documents non-claims. Real mlx-swift/R1 measurement still requires physical device. |
-| #10 Slack bot-token routing | Code covered; live credential missing | Web sink supports webhook, bot token, channel map, and Keychain lookup; `/api/send` gates the exact outbound Slack content before posting; `/api/scrub` returns redaction entity/layer summaries to the browser without raw matched text; `#coach-records` exists; `./run.sh slack-smoke` proves app-originated posting once a Slack app credential is installed. |
+| #10 Slack bot-token routing | Live webhook covered; bot-token fallback code covered | Web sink supports webhook, bot token, channel map, and Keychain lookup; `/api/send` gates the exact outbound Slack content before posting; `/api/scrub` returns redaction entity/layer summaries to the browser without raw matched text; `#coach-records` exists; `AIRPLANE_WEB_URL=http://127.0.0.1:8099 ./run.sh slack-smoke` proves app-originated posting through the installed Slack app webhook. |
 | #11 Manifest/provenance | Stronger local gate; still not full Sigstore | Manifest/provenance gates now require the trusted GitHub Actions release identity, UUID-shaped Rekor references, coherent provenance source/ref, and SHA-256 digests for declared pack files. This catches local pack tampering but still does not perform Fulcio certificate validation or Rekor inclusion proof. |
 | #12 Determinism | Covered locally | `./run.sh eval` / `--check` compares the current report to committed `eval/golden-run.txt`; `--update` is the explicit mutation path. Golden report includes precision and 21 notes. |
 
 ## Reviewer Notes
 
 - Do not treat the simulator scaffold as M3 completion. It proves only UI choreography.
-- Do not treat the current local Slack state as a successful app-originated Slack post.
-  The sink is implemented and gated, but this machine lacks a credential.
-- The old manual Slack UI post demonstrates the content is usable in Slack, but the app
-  path needs `SLACK_WEBHOOK_URL`, `SLACK_BOT_TOKEN`, `slack-webhook-url`, or
-  `slack-bot-token` before final demo review.
+- The current local Slack state is a successful app-originated webhook post to
+  `#coach-records`. Re-run `AIRPLANE_WEB_URL=http://127.0.0.1:8099 ./run.sh slack-smoke`
+  before final review if the Slack app or Keychain credential changes.

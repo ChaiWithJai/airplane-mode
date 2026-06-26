@@ -2,6 +2,9 @@
 
 Run the on-device PHI-scrub demo on a phone in about five minutes: a clean web shell over the Rust `airplane-core`, with all the model work happening locally on your Mac.
 
+For architecture, network topology, and data-flow diagrams, see
+[`docs/demo/system-network-data-flows.md`](system-network-data-flows.md).
+
 ## Prerequisites
 
 - The repo checked out at `~/projects/iphone-phi-scrubber-demo`. (Architecture context: `CANON.md`, `shells/web/README.md`.)
@@ -29,9 +32,9 @@ You need **both** running at the same time, in two terminals.
 
 - **Is the web server listening?**
   ```sh
-  lsof -nP -iTCP:8088 -sTCP:LISTEN
+  lsof -nP -iTCP:8099 -sTCP:LISTEN
   ```
-  Expect to see `*:8088`.
+  Expect to see `*:8099`.
 - **Is the macOS firewall on?**
   ```sh
   /usr/libexec/ApplicationFirewall/socketfilterfw --getglobalstate
@@ -39,7 +42,7 @@ You need **both** running at the same time, in two terminals.
   If it reports "enabled", it may block incoming connections — allow `airplane-web` or disable the firewall temporarily.
 - **Can the Mac reach its own server?**
   ```sh
-  curl http://<lan-ip>:8088/api/health
+  curl http://<lan-ip>:8099/api/health
   ```
   Should return `{"ok":true}`.
 
@@ -49,12 +52,12 @@ First, find the URL: the `./run.sh web` output prints it, or get the Mac's IP wi
 ```sh
 ipconfig getifaddr en0
 ```
-Then use `http://<that-ip>:8088`.
+Then use `http://<that-ip>:8099`.
 
 ### Primary: same Wi-Fi
 
 1. Put the phone on the **same Wi-Fi** as the Mac.
-2. Open `http://<mac-lan-ip>:8088` in **Safari**.
+2. Open `http://<mac-lan-ip>:8099` in **Safari**.
 
 That's it — you should see the demo.
 
@@ -70,14 +73,14 @@ The fix is to put both devices on the iPhone's own local network:
    ```sh
    ipconfig getifaddr en0
    ```
-4. On the phone, open `http://172.20.10.x:8088`.
+4. On the phone, open `http://172.20.10.x:8099`.
 
 **No server restart needed** — `airplane-web` already listens on all interfaces. All traffic stays on the phone's own local network (no internet), which preserves the demo's "stays local" story.
 
 ## Run the demo (8 steps)
 
-1. **Start session.**
-2. Note the **pre-filled** raw note: *"Met with Maria Alvarez (CM-204815)…"*
+1. Start on **"Dictate the session"** and tap **"Start dictation"** to speak a synthetic note, or tap **"Use sample note"** for the scripted demo note.
+2. Confirm the first screen says **model ready** and **Slack live** (or **Slack preview** if you intentionally have no credential).
 3. Tap **"Scrub on device."** Takes ~10–15s — it really runs Bonsai 5×, and the **"Scrubbing"** animation plays.
 4. Tap **"continue →"** to the green **Verifier gate** (residual identifiers: **0**).
 5. Review the clean **Care record** (with the commitment).

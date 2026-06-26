@@ -18,7 +18,7 @@ use std::path::{Path, PathBuf};
 
 const DEFAULT_PACK_DIR: &str = "packs/coach-session";
 const INDEX: &str = "shells/web/static/index.html";
-const DEFAULT_ADDR: &str = "0.0.0.0:8088";
+const DEFAULT_ADDR: &str = "0.0.0.0:8099";
 const PASSES: u32 = 5;
 const SLACK_WEBHOOK_KEYCHAIN_REF: &str = "slack-webhook-url";
 
@@ -366,18 +366,27 @@ fn slack_channel(config: &SinkConfig) -> String {
 }
 
 fn keychain_secret(service: &str) -> Option<String> {
-    if service.trim().is_empty() {
-        return None;
+    #[cfg(test)]
+    {
+        let _ = service;
+        None
     }
-    let output = std::process::Command::new("security")
-        .args(["find-generic-password", "-s", service, "-w"])
-        .output()
-        .ok()?;
-    if !output.status.success() {
-        return None;
+
+    #[cfg(not(test))]
+    {
+        if service.trim().is_empty() {
+            return None;
+        }
+        let output = std::process::Command::new("security")
+            .args(["find-generic-password", "-s", service, "-w"])
+            .output()
+            .ok()?;
+        if !output.status.success() {
+            return None;
+        }
+        let secret = String::from_utf8_lossy(&output.stdout).trim().to_string();
+        (!secret.is_empty()).then_some(secret)
     }
-    let secret = String::from_utf8_lossy(&output.stdout).trim().to_string();
-    (!secret.is_empty()).then_some(secret)
 }
 
 fn slack_bot_token(config: &SinkConfig) -> Option<String> {
@@ -805,7 +814,7 @@ fn local_ips() -> Vec<String> {
 fn main() -> Result<()> {
     let addr = std::env::var("AIRPLANE_WEB_ADDR").unwrap_or_else(|_| DEFAULT_ADDR.to_string());
     let server = tiny_http::Server::http(&addr).map_err(|e| anyhow::anyhow!("bind {addr}: {e}"))?;
-    let port = addr.rsplit_once(':').map(|(_, p)| p).unwrap_or("8088");
+    let port = addr.rsplit_once(':').map(|(_, p)| p).unwrap_or("8099");
     println!("Airplane Mode — web shell");
     println!("  local:   http://localhost:{port}");
     for ip in local_ips() {

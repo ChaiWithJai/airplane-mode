@@ -117,16 +117,6 @@ function clock(ampm){
   return ampm ? `${h}:${m} ${ap}` : `${h}:${m}`;
 }
 
-function toggleHTML(label, dark){
-  const cls = S.airplane ? 'on' : 'off';
-  const col = dark ? '#cfd6cd' : '#221f19';
-  const icon = dark ? '#8c8475' : '#b87814';
-  return `<div class="toggle" data-act="toggle" style="${dark?'background:rgba(255,255,255,.02);border-color:#243029':''}">
-    <span style="display:flex;align-items:center;gap:10px"><span style="color:${icon};font-size:15px">✈</span>
-    <span style="font:600 13px var(--sans);color:${col}">${label}</span></span>
-    <span class="sw ${cls}"><b></b></span></div>`;
-}
-
 // ---------- screens ----------
 const screens = {
  capturing(){ setDark(false);
@@ -255,24 +245,6 @@ const screens = {
      <span style="font-size:13px">→</span>gate-clean · ready for Slack sink</div>
    <button class="btn" data-act="send" style="margin-top:11px">Send to #coach-records</button>`; },
 
- held(){ setDark(false); return `
-   <div style="font:700 17px var(--sans);letter-spacing:-.01em">Sending…</div>
-   <div style="margin-top:16px;background:#fbf2dd;border:1.5px solid #e3c98a;border-radius:16px;padding:15px;display:flex;gap:12px;align-items:flex-start">
-     <div style="width:30px;height:30px;flex:none;border-radius:9px;background:#f3e2bd;display:flex;align-items:center;justify-content:center;color:var(--gold);font-size:16px">→</div>
-     <div><div style="font:700 14px var(--sans);color:var(--amber)">Slack sink check</div>
-       <div style="font:400 12.5px/1.5 var(--sans);color:#9a7a3a;margin-top:4px">Nothing leaves until the verifier approves the exact outbound record.</div></div></div>
-   <div style="margin-top:16px;background:var(--card);border:1.5px solid var(--line);border-radius:16px;padding:14px">
-     <div style="display:flex;align-items:center;justify-content:space-between">
-       <span class="mono" style="font-size:12px;font-weight:600;color:#736c5d;letter-spacing:.03em">OUTBOX</span>
-       <span class="mono" style="font-size:10px;font-weight:700;color:var(--amber);background:#f6ecd6;border:1px solid #e3c98a;border-radius:20px;padding:4px 9px">QUEUED · 1</span></div>
-     <div style="display:flex;align-items:center;gap:11px;margin-top:13px">
-       <div class="mono" style="width:34px;height:34px;flex:none;border-radius:9px;background:#efe9da;display:flex;align-items:center;justify-content:center;font:700 12px var(--mono);color:#736c5d">${esc((S.result.record.client_pseudonym||'7F3A').slice(-2))}</div>
-       <div style="flex:1"><div style="font:600 13px var(--sans)">${esc(S.result.record.client_pseudonym||'CLIENT')} · care record</div>
-         <div class="mono" style="font-size:11px;color:#a39a86;margin-top:3px">clean · awaiting sink</div></div>
-       <span style="width:8px;height:8px;border-radius:50%;background:var(--gold)"></span></div></div>
-   <div class="grow" style="display:flex;align-items:flex-end">
-     <div style="font:600 16px/1.35 var(--sans);letter-spacing:-.01em">The sink only opens<br><span style="color:var(--amber)">after the verifier passes.</span></div></div>`; },
-
  flush(){ setDark(true,true); return `
    <div style="font:700 18px var(--sans);color:#eef4ee;letter-spacing:-.01em">Sending to Slack</div>
    ${ '' }
@@ -372,7 +344,6 @@ function render(){
 
 async function onAct(e){
   const act = e.currentTarget.getAttribute('data-act');
-  if(act==='toggle') return render();
   if(act==='dictate') return toggleDictation();
   if(act==='sample'){ S.note=NOTE; S.speechMsg='sample loaded'; return render(); }
   if(act==='scrub'){
